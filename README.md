@@ -48,7 +48,7 @@ WhatsHire is a production-grade Telegram Job Bot SaaS that discovers live, verif
    - **Country Pack** (₹200 one-time) — Unlocks regional remote filters: "Remote US", "Remote EU", and "Worldwide".
 
 8. **Viral Referral Program**:
-   - Unique 6-character referral code (e.g. `RAJ582`) and link (`https://t.me/WhatsHireBot?start=RAJ582`).
+   - Unique 6-character referral code (e.g. `RAJ582`) and link (`https://t.me/TeleHireJOB_bot?start=RAJ582`).
    - When a friend joins: Friend gets **+2 extra auto-applies**.
    - When a friend purchases ANY plan: Referrer gets **+7 extra auto-applies + 50 manual live links** free.
 

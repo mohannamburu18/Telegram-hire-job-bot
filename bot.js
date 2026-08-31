@@ -375,7 +375,7 @@ function createBot() {
       // 1. State ASK_TYPE
       if (user.state === 'ASK_TYPE' || (user.state !== 'SEARCH_READY' && user.state !== 'ASK_EXP' && (text === '1' || text === '2'))) {
         if (text === '1' || lowerText.includes('recruiter')) {
-          return ctx.reply('Recruiter portal coming soon. Contact @whatshire_support');
+          return ctx.reply('Recruiter portal coming soon. Contact @TeleHireJOB_bot');
         } else if (text === '2' || lowerText.includes('job seeker') || lowerText.includes('seeker')) {
           user.state = 'ASK_RESUME';
           await user.save();
