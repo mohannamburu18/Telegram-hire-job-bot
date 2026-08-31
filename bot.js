@@ -242,6 +242,17 @@ function createBot() {
     return ctx.reply(planMsg, { parse_mode: 'HTML' });
   });
 
+  // --- EXTENSION COMMAND ---
+  bot.command(['extension', 'chrome', 'addon', 'ext'], async (ctx) => {
+    const user = await getUser(ctx);
+    if (!user.extension_license_key) {
+      user.extension_license_key = 'WH-' + Math.random().toString(16).slice(2, 6).toUpperCase() + '-' + Math.random().toString(16).slice(2, 6).toUpperCase() + '-' + Math.random().toString(16).slice(2, 6).toUpperCase();
+      await user.save();
+    }
+    const planConfig = PLANS[user.plan] || PLANS.popular;
+    return sendExtensionActivationGuide(ctx, user, planConfig.name);
+  });
+
   // --- PAGINATION COMMANDS ---
   bot.command('more', async (ctx) => {
     const user = await getUser(ctx);

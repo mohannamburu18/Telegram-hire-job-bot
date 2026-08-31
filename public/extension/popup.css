@@ -1,0 +1,255 @@
+/* WhatsHire Safe Filler - Popup Dark UI */
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  width: 360px;
+  background-color: #0b0f19;
+  color: #f8fafc;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  font-size: 13px;
+}
+
+.wh-popup-container {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.wh-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #1e293b;
+  padding-bottom: 10px;
+}
+
+.wh-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.wh-logo-icon {
+  background: linear-gradient(135deg, #2563eb, #7c3aed);
+  color: #fff;
+  font-weight: 800;
+  font-size: 13px;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 10px rgba(37, 99, 235, 0.4);
+}
+
+.wh-brand h2 {
+  font-size: 15px;
+  font-weight: 700;
+  color: #f8fafc;
+  line-height: 1.1;
+}
+
+.wh-tagline {
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.wh-version-tag {
+  background: #1e293b;
+  color: #38bdf8;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 1px solid #0284c7;
+}
+
+.wh-card {
+  background: #121a2b;
+  border: 1px solid #1e2a44;
+  border-radius: 10px;
+  padding: 12px;
+}
+
+.wh-sync-card label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: #94a3b8;
+  margin-bottom: 6px;
+}
+
+.wh-input-group {
+  display: flex;
+  gap: 6px;
+}
+
+.wh-input-group input {
+  flex: 1;
+  background: #0b0f19;
+  border: 1px solid #334155;
+  border-radius: 6px;
+  color: #f8fafc;
+  padding: 8px 10px;
+  font-size: 12px;
+}
+
+.wh-input-group input:focus {
+  outline: none;
+  border-color: #3b82f6;
+}
+
+.wh-btn-sync {
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.wh-btn-sync:hover {
+  background: #1d4ed8;
+}
+
+.wh-status-text {
+  display: block;
+  font-size: 11px;
+  color: #64748b;
+  margin-top: 6px;
+}
+
+/* Subscription Card */
+.wh-sub-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.wh-badge-paid {
+  background: #064e3b;
+  color: #6ee7b7;
+  border: 1px solid #059669;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 11px;
+  width: fit-content;
+}
+
+.wh-badge-free {
+  background: #450a0a;
+  color: #fca5a5;
+  border: 1px solid #dc2626;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 11px;
+  width: fit-content;
+}
+
+.wh-grid-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.wh-stat-item {
+  background: #0b0f19;
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid #1e293b;
+}
+
+.wh-stat-item .label {
+  font-size: 10px;
+  color: #64748b;
+  display: block;
+}
+
+.wh-stat-item .val {
+  font-size: 13px;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+/* Action Box */
+.wh-btn-fill-action {
+  width: 100%;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: #fff;
+  border: none;
+  padding: 10px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+  transition: all 0.2s;
+}
+
+.wh-btn-fill-action:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.4);
+}
+
+.wh-btn-fill-action:disabled {
+  background: #1e293b;
+  color: #64748b;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* Safety Card */
+.wh-safety-card {
+  background: #0f172a;
+  border-color: #1e293b;
+}
+
+.wh-safety-header {
+  font-size: 11px;
+  font-weight: 700;
+  color: #38bdf8;
+  margin-bottom: 6px;
+}
+
+.wh-safety-list {
+  list-style: none;
+  font-size: 11px;
+  color: #94a3b8;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.wh-safety-list li strong {
+  color: #e2e8f0;
+}
+
+.wh-footer {
+  text-align: center;
+  padding-top: 4px;
+}
+
+.wh-bot-link {
+  color: #38bdf8;
+  text-decoration: none;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.wh-bot-link:hover {
+  text-decoration: underline;
+}
+
