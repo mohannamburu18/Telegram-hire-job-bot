@@ -121,65 +121,64 @@
     return true;
   }
 
-  // Robust Field Label & Question Extractor (Traverses 1-6 Ancestor Levels)
+  // Robust Field Label & Question Extractor (Scoped to immediate field container)
   function getFieldLabel(el) {
     if (!el) return '';
-    let collectedText = '';
+    const parts = [];
 
-    const ariaLabel = el.getAttribute('aria-label') || '';
-    const placeholder = el.placeholder || '';
-    const name = el.name || '';
-    const id = el.id || '';
+    // 1. Explicit autocomplete attribute
+    const autocomplete = el.getAttribute('autocomplete') || '';
+    if (autocomplete) parts.push(autocomplete);
 
-    // A. aria-labelledby
-    const labelledby = el.getAttribute('aria-labelledby');
-    if (labelledby) {
-      const parts = labelledby.split(/\s+/);
-      for (const pId of parts) {
-        const labelEl = document.getElementById(pId);
-        if (labelEl && labelEl.innerText.trim()) collectedText += ' ' + labelEl.innerText.trim();
+    // 2. Explicit label[for="id"]
+    if (el.id) {
+      const explicitLabel = document.querySelector(`label[for="${CSS.escape(el.id)}"]`);
+      if (explicitLabel && explicitLabel.innerText.trim()) {
+        parts.push(explicitLabel.innerText.trim());
       }
     }
 
-    // B. Explicit label[for="..."]
-    if (id) {
-      const labelFor = document.querySelector(`label[for="${CSS.escape(id)}"]`);
-      if (labelFor && labelFor.innerText.trim()) collectedText += ' ' + labelFor.innerText.trim();
-    }
-
-    // C. Wrapping label
+    // 3. Wrapping label
     const wrappingLabel = el.closest('label');
     if (wrappingLabel && wrappingLabel.innerText.trim()) {
-      collectedText += ' ' + wrappingLabel.innerText.trim();
+      parts.push(wrappingLabel.innerText.trim());
     }
 
-    // D. Ancestor Hierarchy Traverser (Up to 6 levels for custom cards, fieldsets, and headings)
-    let curr = el.parentElement;
-    let depth = 0;
-    while (curr && depth < 6) {
-      if (curr.tagName.toLowerCase() === 'fieldset') {
-        const legend = curr.querySelector('legend');
-        if (legend && legend.innerText.trim()) collectedText += ' ' + legend.innerText.trim();
+    // 4. aria-labelledby
+    const labelledby = el.getAttribute('aria-labelledby');
+    if (labelledby) {
+      const ids = labelledby.split(/\s+/);
+      for (const id of ids) {
+        const target = document.getElementById(id);
+        if (target && target.innerText.trim()) parts.push(target.innerText.trim());
       }
-
-      const semanticTitles = curr.querySelectorAll('h1, h2, h3, h4, h5, h6, .fb-dash-form-element__label, [data-test-form-element-label], [data-qa="form-label"], .t-bold, label, span[aria-hidden="true"]');
-      for (const t of semanticTitles) {
-        if (t.innerText && t.innerText.trim() && !collectedText.includes(t.innerText.trim())) {
-          collectedText += ' ' + t.innerText.trim();
-        }
-      }
-
-      const prev = curr.previousElementSibling;
-      if (prev && (prev.tagName.toLowerCase() === 'label' || prev.classList.contains('fb-dash-form-element__label') || prev.getAttribute('data-test-form-element-label') !== null)) {
-        if (prev.innerText && prev.innerText.trim()) collectedText += ' ' + prev.innerText.trim();
-      }
-
-      curr = curr.parentElement;
-      depth++;
     }
 
-    const combined = `${collectedText} ${ariaLabel} ${placeholder} ${name} ${id}`;
-    return normalizeText(combined);
+    // 5. aria-label
+    const ariaLabel = el.getAttribute('aria-label');
+    if (ariaLabel) parts.push(ariaLabel);
+
+    // 6. placeholder
+    if (el.placeholder) parts.push(el.placeholder);
+
+    // 7. name / id
+    if (el.name) parts.push(el.name);
+    if (el.id) parts.push(el.id);
+
+    // 8. Immediate field container question (Fieldset legend or immediate .field / .form-group label)
+    const fieldContainer = el.closest('fieldset, .field, .form-group, [data-test-form-builder-item], .fb-dash-form-element, [data-qa="form-group"]');
+    if (fieldContainer) {
+      const legend = fieldContainer.querySelector('legend');
+      if (legend && legend.innerText.trim()) {
+        parts.push(legend.innerText.trim());
+      }
+      const directLabel = fieldContainer.querySelector('.fb-dash-form-element__label, [data-test-form-element-label], [data-qa="form-label"], .t-bold, span[aria-hidden="true"]');
+      if (directLabel && directLabel.innerText.trim()) {
+        parts.push(directLabel.innerText.trim());
+      }
+    }
+
+    return normalizeText(parts.join(' '));
   }
 
   // =========================================================================
@@ -191,47 +190,68 @@
     const type = (el.type || '').toLowerCase();
     const elName = (el.name || '').toLowerCase();
     const elId = (el.id || '').toLowerCase();
+    const auto = (el.getAttribute('autocomplete') || '').toLowerCase();
 
-    // 1. Middle Name (Specific)
-    if (norm.includes('middle name') || norm.includes('middlename') || elName.includes('middle_name') || elName.includes('mname')) {
+    // A. DIRECT AUTOCOMPLETE / NAME ATTRIBUTE CHECKS (Highest Priority)
+    if (auto === 'given-name' || elName === 'first_name' || elName === 'fname' || elName === 'firstname' || elId === 'first_name' || elName.includes('[first_name]')) {
+      return { key: 'firstName', value: profile.firstName || 'Mohan' };
+    }
+    if (auto === 'family-name' || elName === 'last_name' || elName === 'lname' || elName === 'lastname' || elId === 'last_name' || elName.includes('[last_name]')) {
+      return { key: 'lastName', value: profile.lastName || 'Namburu' };
+    }
+    if (elName === 'middle_name' || elName === 'mname' || elId === 'middle_name' || elName.includes('[middle_name]')) {
+      return { key: 'middleName', value: profile.middleName || 'Krishna' };
+    }
+    if (auto === 'email' || type === 'email' || elName === 'email' || elId === 'email' || elName.includes('[email]')) {
+      return { key: 'email', value: profile.email };
+    }
+    if (auto === 'tel' || type === 'tel' || elName === 'phone' || elId === 'phone' || elName.includes('[phone]')) {
+      return { key: 'phone', value: profile.phone };
+    }
+
+    // B. SEMANTIC LABEL & QUESTION CHECKS
+
+    // 1. Middle Name
+    if (norm.includes('middle name') || norm.includes('middlename')) {
       return { key: 'middleName', value: profile.middleName || 'Krishna' };
     }
 
     // 2. First Name
     if (
-      (norm.includes('first name') || norm.includes('firstname') || norm.includes('given name') || norm.includes('forename') || elName === 'fname' || elName === 'firstname' || elName === 'first_name') &&
-      !norm.includes('last') && !norm.includes('middle') && !norm.includes('company')
+      (norm.includes('first name') || norm.includes('firstname') || norm.includes('given name') || norm.includes('forename')) &&
+      !norm.includes('last') && !norm.includes('middle') && !norm.includes('company') && !norm.includes('school')
     ) {
-      return { key: 'firstName', value: profile.firstName || (profile.name || '').split(' ')[0] || 'Mohan' };
+      return { key: 'firstName', value: profile.firstName || 'Mohan' };
     }
 
     // 3. Last Name / Surname
     if (
-      norm.includes('last name') || norm.includes('lastname') || norm.includes('surname') || norm.includes('family name') || elName === 'lname' || elName === 'lastname' || elName === 'last_name'
+      (norm.includes('last name') || norm.includes('lastname') || norm.includes('surname') || norm.includes('family name')) &&
+      !norm.includes('first') && !norm.includes('middle') && !norm.includes('company') && !norm.includes('school')
     ) {
-      return { key: 'lastName', value: profile.lastName || (profile.name || '').split(' ').slice(1).join(' ') || 'Namburu' };
+      return { key: 'lastName', value: profile.lastName || 'Namburu' };
     }
 
     // 4. Full Name (Only when specifically candidate full name)
-    const isUnrelatedName = norm.includes('company') || norm.includes('employer') || norm.includes('school') || norm.includes('college') || norm.includes('university') || norm.includes('project') || norm.includes('file') || norm.includes('user') || norm.includes('ref') || norm.includes('manager');
+    const isUnrelated = norm.includes('company') || norm.includes('employer') || norm.includes('school') || norm.includes('college') || norm.includes('university') || norm.includes('project') || norm.includes('file') || norm.includes('user') || norm.includes('ref') || norm.includes('manager') || norm.includes('emergency');
     if (
-      !isUnrelatedName &&
+      !isUnrelated &&
       (norm === 'name' || norm === 'full name' || norm === 'fullname' || norm === 'candidate name' || norm === 'applicant name' || norm === 'your name' || norm === 'legal name' || norm === 'candidate full name' || elName === 'fullname' || elName === 'applicant_name' || (elName === 'name' && !elId.includes('company')))
     ) {
       return { key: 'name', value: profile.name || 'Mohan Krishna Namburu' };
     }
 
     // 5. Email
-    if (type === 'email' || norm === 'email' || norm === 'email address' || norm.includes('email') || norm.includes('e mail')) {
+    if (norm === 'email' || norm === 'email address' || norm.includes('email') || norm.includes('e mail')) {
       return { key: 'email', value: profile.email };
     }
 
     // 6. Phone / Mobile
-    if (type === 'tel' || norm.includes('phone') || norm.includes('mobile') || norm.includes('contact number') || norm.includes('telephone') || norm.includes('cell')) {
+    if (norm.includes('phone') || norm.includes('mobile') || norm.includes('contact number') || norm.includes('telephone') || norm.includes('cell')) {
       return { key: 'phone', value: profile.phone };
     }
 
-    // 7. City / Location / Address
+    // 7. City / State / Country / Location
     if (norm.includes('city') && !norm.includes('university')) {
       return { key: 'city', value: profile.city || 'Bangalore' };
     }
