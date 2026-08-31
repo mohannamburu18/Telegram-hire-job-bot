@@ -12,9 +12,13 @@ const { fetchLiveJobs } = require('./jobs/fetchLiveJobs');
 const { PLANS, ADDONS, hasAddonAccess } = require('./utils/plans');
 const adminRoutes = require('./routes/admin');
 const userRoutes = require('./routes/user');
+const { buildExtensionZip } = require('./utils/zipBuilder');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Build extension zip immediately on server start
+buildExtensionZip();
 
 // Middlewares
 app.use(cors({
@@ -25,6 +29,28 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
+app.use('/public', express.static(path.join(__dirname, 'public')));
+app.use('/extension', express.static(path.join(__dirname, 'extension')));
+app.use('/download', express.static(path.join(__dirname, 'public')));
+
+// Direct Extension Download Endpoints (100% Downloadable)
+app.get(['/download/extension.zip', '/download/whatshire-extension.zip', '/api/extension/download', '/extension.zip', '/whatshire-extension.zip', '/api/user/download/extension.zip'], (req, res) => {
+  const publicZip = path.join(__dirname, 'public', 'whatshire-extension.zip');
+  const rootZip = path.join(__dirname, 'whatshire-extension.zip');
+  const filePath = fs.existsSync(publicZip) ? publicZip : rootZip;
+
+  if (fs.existsSync(filePath)) {
+    res.setHeader('Content-Type', 'application/zip');
+    res.setHeader('Content-Disposition', 'attachment; filename="whatshire-extension.zip"');
+    return res.sendFile(filePath);
+  } else {
+    buildExtensionZip();
+    if (fs.existsSync(publicZip)) {
+      return res.sendFile(publicZip);
+    }
+    return res.status(404).json({ error: 'Extension zip file not found on server.' });
+  }
+});
 
 // Mount Routes
 app.use(adminRoutes);

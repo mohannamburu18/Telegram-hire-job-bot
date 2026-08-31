@@ -18,6 +18,7 @@
   "author": "WhatsHire",
   "license": "ISC",
   "dependencies": {
+    "adm-zip": "^0.6.0",
     "axios": "^1.7.9",
     "cheerio": "^1.0.0",
     "cors": "^2.8.5",

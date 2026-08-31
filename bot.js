@@ -829,19 +829,23 @@ async function executeAutoApply(ctx, user, indexNumber) {
  * Send Paid Extension Activation Guide with License Key & Steps
  */
 async function sendExtensionActivationGuide(ctx, user, planName = 'POPULAR') {
-  const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
-  const licenseKey = user.extension_license_key || 'WH-PRO-2026-ACTIVE';
-  const downloadUrl = `${baseUrl}/api/user/download/extension.zip`;
+  const baseUrl = process.env.BASE_URL || process.env.RENDER_EXTERNAL_URL || 'http://localhost:3000';
+  const licenseKey = user.extension_license_key || 'WH-1E92-DD70-B077';
+  const serverDownloadUrl = `${baseUrl}/download/extension.zip`;
+  const githubDownloadUrl = 'https://github.com/mohannamburu18/Telegram-hire-job-bot/raw/main/whatshire-extension.zip';
 
   const guideMsg = 
     `🎉 <b>Paid Plan Activated: ${escapeHtml(planName)}</b>\n` +
     `━━━━━━━━━━━━━━━━━━━━\n` +
     `🛡️ <b>How to Activate Chrome Extension (99% Safe, &lt;1% Ban Chance)</b>\n\n` +
     `<b>Step 1: Install Extension</b>\n` +
-    `• Download unpacked zip: <a href="${downloadUrl}">Click Here to Download</a>\n` +
+    `• <b>Direct Download:</b> <a href="${serverDownloadUrl}">Click Here to Download (.zip)</a>\n` +
+    `• <b>Backup Download (GitHub):</b> <a href="${githubDownloadUrl}">Download from GitHub</a>\n` +
+    `• After download, unzip the file on your laptop (Right click -> Extract All)\n` +
     `• In Chrome, go to: <code>chrome://extensions/</code>\n` +
-    `• Enable <b>Developer mode</b> (top-right)\n` +
-    `• Click <b>Load unpacked</b> -> Select unzipped <code>extension</code> folder\n\n` +
+    `• Enable <b>Developer mode</b> (toggle in top-right)\n` +
+    `• Click <b>Load unpacked</b> -> Select the unzipped <code>extension</code> folder\n` +
+    `• WhatsHire icon appears in your toolbar\n\n` +
     `<b>Step 2: Sync Your Telegram Profile</b>\n` +
     `• Click the <b>WhatsHire icon</b> in your Chrome toolbar\n` +
     `• Enter your email: <code>${escapeHtml(user.email || 'your_email@gmail.com')}</code>\n` +
@@ -851,15 +855,15 @@ async function sendExtensionActivationGuide(ctx, user, planName = 'POPULAR') {
     `<b>Step 3: Use Extension Safely</b>\n` +
     `• Open any job on LinkedIn Easy Apply, Naukri, Indeed, Cutshort, Hirist\n` +
     `• Top blue bar appears: Click <b>⚡ Fill Form Safely</b>\n` +
-    `• Extension types like human (80-190ms per key)\n` +
+    `• Extension types like human (80-190ms per key, random delays)\n` +
     `• Select resume file -> Review -> <b>Click Submit MANUALLY</b>\n\n` +
     `🛡️ <b>Why 99% Safe (&lt;1% Ban):</b>\n` +
-    `1. Fill-only (never auto-submits, you review)\n` +
-    `2. Human-like typing with random keystroke delays\n` +
+    `1. Fill-only (never auto-submits, you review & submit)\n` +
+    `2. Human-like typing with random keystroke intervals\n` +
     `3. Runs in your own browser & residential IP (not server)\n` +
-    `4. Max 40 fills/day safety limit\n\n` +
+    `4. Max 40 fills/day safety limit protects your account\n\n` +
     `<b>Step 4: Quota & Expiry Tie-In</b>\n` +
-    `• Shares your paid plan quota. Resets safety count daily.\n\n` +
+    `• Shares your paid plan quota. Resets safety count daily at midnight.\n\n` +
     `<i>(Type /myplan to check your quota anytime)</i>`;
 
   return ctx.reply(guideMsg, { parse_mode: 'HTML', disable_web_page_preview: true });
