@@ -1,5 +1,5 @@
 /**
- * WhatsHire Safe Filler - Popup Controller (Phase 5.1 Fixed)
+ * TeleHire Safe Filler - Popup Controller (Phase 7 Real-Time Repaired)
  */
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -10,6 +10,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   const syncStatus = document.getElementById('sync-status');
   const subCard = document.getElementById('sub-status-card');
   const fillBtn = document.getElementById('btn-trigger-fill');
+  const queueBtn = document.getElementById('btn-process-queue');
+  const diagPanel = document.getElementById('diag-panel');
+  const diagPlatform = document.getElementById('diag-platform');
+  const diagDetails = document.getElementById('diag-details');
 
   // 1. Load saved credentials from local storage
   chrome.storage.local.get(['userEmail', 'userLicense', 'customBackendUrl'], async (data) => {
@@ -24,6 +28,26 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (data.userLicense) licenseInput.value = data.userLicense;
       await verifySubscription(data.userEmail, data.userLicense || '');
     }
+
+    // Query active tab diagnostics
+    try {
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (tab && tab.id) {
+        chrome.tabs.sendMessage(tab.id, { type: 'GET_DIAGNOSTICS' }, (res) => {
+          if (res && res.diagnostics) {
+            const d = res.diagnostics;
+            diagPanel.style.display = 'block';
+            diagPlatform.innerText = d.platform || 'Detected';
+            diagDetails.innerHTML = `
+              App Detected: <strong>${d.applicationDetected ? 'YES' : 'NO'}</strong><br>
+              Current Step: <strong>${d.currentStep || 'Ready'}</strong><br>
+              Fields Detected: <strong>${d.fieldsDetected}</strong> | Filled: <strong>${d.fieldsFilled}</strong><br>
+              Status: <strong>${d.status}</strong>
+            `;
+          }
+        });
+      }
+    } catch (_) {}
   });
 
   // Save backend URL on change
@@ -70,7 +94,30 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
 
-  // 4. Verify Subscription Helper with Retry & Detailed Reasons
+  // 4. Process Next Queued Job
+  queueBtn.addEventListener('click', async (e) => {
+    e.preventDefault();
+    const email = emailInput.value.trim().toLowerCase();
+    const license = licenseInput.value.trim().toUpperCase();
+
+    queueBtn.disabled = true;
+    queueBtn.innerText = 'Fetching Next Task...';
+
+    const res = await chrome.runtime.sendMessage({ type: 'FETCH_APPLICATION_TASK', email, license });
+    if (res && res.success && res.task) {
+      chrome.tabs.create({ url: res.task.jobUrl }, (newTab) => {
+        window.close();
+      });
+    } else {
+      queueBtn.innerText = 'No Pending Tasks in Queue';
+      setTimeout(() => {
+        queueBtn.disabled = false;
+        queueBtn.innerText = '🚀 Open & Process Next Queued Job';
+      }, 3000);
+    }
+  });
+
+  // 5. Verify Subscription Helper
   async function verifySubscription(email, license) {
     try {
       syncStatus.innerText = 'Connecting to server...';
@@ -83,6 +130,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         syncStatus.innerText = `✅ Verified: ${res.userName || res.name || email}`;
         syncStatus.style.color = '#4ade80';
         fillBtn.disabled = false;
+        queueBtn.style.display = 'block';
 
         chrome.storage.local.set({ userEmail: email, userLicense: license });
 
@@ -107,6 +155,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         syncStatus.innerText = '🔒 Paid subscriber status not verified';
         syncStatus.style.color = '#f87171';
         fillBtn.disabled = true;
+        queueBtn.style.display = 'none';
 
         subCard.innerHTML = `
           <span class="wh-badge-free">🔒 ${res?.plan || 'Free User / Expired'}</span>
@@ -122,6 +171,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       syncStatus.innerText = `❌ Connection Error: ${err.message}`;
       syncStatus.style.color = '#f87171';
       fillBtn.disabled = true;
+      queueBtn.style.display = 'none';
     }
   }
 });

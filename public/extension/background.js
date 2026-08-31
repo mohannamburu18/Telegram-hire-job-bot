@@ -1,6 +1,6 @@
 /**
- * TeleHire Safe Filler - Background Service Worker (Phase 6B Repaired)
- * Enforces Paid Subscription, Quota Decrement, and Daily Safety Limits
+ * TeleHire Safe Filler & Auto-Apply Background Service Worker (Phase 7 Real-Time Repaired)
+ * Handles Subscription Verification, Profile Fetching, Quota Decrement, and Application Task Queue
  */
 
 const BACKEND_URL = 'https://telegram-hire-job-bot.onrender.com';
@@ -21,7 +21,7 @@ async function getBackendUrl() {
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.type === 'CHECK_SUBSCRIPTION') {
     handleCheckSubscription(request.email, request.license).then(sendResponse);
-    return true; // async
+    return true;
   }
 
   if (request.type === 'GET_PROFILE') {
@@ -36,6 +36,16 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
   if (request.type === 'GET_DAILY_USAGE') {
     getDailyUsage().then(sendResponse);
+    return true;
+  }
+
+  if (request.type === 'FETCH_APPLICATION_TASK') {
+    handleFetchTask(request.email, request.license).then(sendResponse);
+    return true;
+  }
+
+  if (request.type === 'UPDATE_TASK_STATUS') {
+    handleUpdateTaskStatus(request.payload).then(sendResponse);
     return true;
   }
 });
@@ -119,7 +129,7 @@ async function handleGetProfile(email, license = '') {
     const cleanEmail = (email || '').trim().toLowerCase();
     const cleanLic = (cleanLicense || '').trim().toUpperCase();
     const targetUrl = `${backend}/api/user/getProfile?email=${encodeURIComponent(cleanEmail)}&license=${encodeURIComponent(cleanLic)}`;
-    
+
     let res;
     try {
       res = await fetchWithRetry(targetUrl);
@@ -142,7 +152,7 @@ async function handleUseQuota(payload) {
   try {
     const backend = await getBackendUrl();
     const targetUrl = `${backend}/api/user/useQuota`;
-    
+
     let data;
     try {
       data = await fetchWithRetry(targetUrl, {
@@ -173,6 +183,30 @@ async function handleUseQuota(payload) {
     });
 
     return { ...data, todayCount: newCount };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+}
+
+async function handleFetchTask(email, license) {
+  try {
+    const backend = await getBackendUrl();
+    const targetUrl = `${backend}/api/queue/pending?email=${encodeURIComponent(email)}&license=${encodeURIComponent(license)}`;
+    return await fetchWithRetry(targetUrl);
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+}
+
+async function handleUpdateTaskStatus(payload) {
+  try {
+    const backend = await getBackendUrl();
+    const targetUrl = `${backend}/api/queue/updateStatus`;
+    return await fetchWithRetry(targetUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
   } catch (err) {
     return { success: false, error: err.message };
   }

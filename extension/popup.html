@@ -13,10 +13,10 @@
         <div class="wh-logo-icon">TH</div>
         <div>
           <h2>TeleHire</h2>
-          <span class="wh-tagline">Safe Job Form Filler (99% Safe)</span>
+          <span class="wh-tagline">Real-Time Safe Form Filler</span>
         </div>
       </div>
-      <span class="wh-version-tag">Paid Only</span>
+      <span class="wh-version-tag">Verified Paid</span>
     </header>
 
     <!-- Email & License Key Sync Box -->
@@ -36,11 +36,25 @@
       <!-- Populated dynamically via JS -->
     </div>
 
-    <!-- Quick Action -->
-    <div class="wh-action-box">
+    <!-- Quick Actions -->
+    <div class="wh-action-box" style="display: flex; flex-direction: column; gap: 6px;">
       <button id="btn-trigger-fill" class="wh-btn-fill-action" disabled>
-        ⚡ Fill Job Form on Current Page
+        ⚡ Fill Application on Current Tab
       </button>
+      <button id="btn-process-queue" class="wh-btn-queue-action" style="background: #059669; color: #fff; border: none; padding: 8px; border-radius: 6px; font-weight: 700; cursor: pointer; display: none;">
+        🚀 Open & Process Next Queued Job
+      </button>
+    </div>
+
+    <!-- Live Diagnostics Panel -->
+    <div id="diag-panel" class="wh-card" style="display: none; background: #0f172a; border: 1px solid #1e293b; padding: 10px; border-radius: 8px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+        <span style="font-size: 11px; font-weight: bold; color: #38bdf8;">📊 Live Page Diagnostics</span>
+        <span id="diag-platform" style="font-size: 10px; background: #1e293b; color: #e2e8f0; padding: 2px 6px; border-radius: 4px;">Detecting...</span>
+      </div>
+      <div style="font-size: 11px; color: #94a3b8; line-height: 1.5;" id="diag-details">
+        Ready on this tab.
+      </div>
     </div>
 
     <!-- Server Settings (Collapsible) -->
@@ -53,16 +67,16 @@
       </div>
     </details>
 
-    <!-- Safety Guarantee -->
+    <!-- Safety Factual Language -->
     <div class="wh-card wh-safety-card">
       <div class="wh-safety-header">
-        <span>🛡️ 99% Safe · Less Than 1% Ban Risk</span>
+        <span>🛡️ Candidate Safety & Control</span>
       </div>
       <ul class="wh-safety-list">
-        <li><strong>Human Typing:</strong> 80-190ms random keystrokes</li>
-        <li><strong>Manual Submit:</strong> You review and click Submit</li>
-        <li><strong>Daily Safety Cap:</strong> Maximum 40 fills/day</li>
-        <li><strong>Residential IP:</strong> Runs inside your real browser session</li>
+        <li><strong>Human Typing:</strong> Paced keystroke simulation</li>
+        <li><strong>Mandatory Manual Review:</strong> Final submission is never automated</li>
+        <li><strong>Daily Safety Limit:</strong> Maximum 40 fills/day</li>
+        <li><strong>Residential Execution:</strong> Runs within your active browser session</li>
       </ul>
     </div>
 

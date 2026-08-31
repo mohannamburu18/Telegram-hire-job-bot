@@ -356,6 +356,45 @@ function createBot() {
     }
   });
 
+  // --- INLINE BUTTON CALLBACK FOR QUEUEING FOR EXTENSION ---
+  bot.action(/^queue_job_(\d+)$/, async (ctx) => {
+    try {
+      const index = parseInt(ctx.match[1], 10);
+      const user = await User.findOne({ telegram_id: ctx.from.id });
+      if (!user) return ctx.reply('Please type /start first.');
+
+      const cached = searchCache.get(user.telegram_id);
+      const job = cached?.autoJobs?.[index] || cached?.manualJobs?.[index];
+
+      if (!job) {
+        return ctx.answerCbQuery('Job details not found in cache. Please re-search.');
+      }
+
+      const ApplicationQueue = require('./models/ApplicationQueue');
+      const taskId = `TASK-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`;
+
+      await ApplicationQueue.create({
+        user_id: user._id,
+        telegram_id: user.telegram_id,
+        task_id: taskId,
+        job_url: job.job_url,
+        title: job.title,
+        company: job.company,
+        platform: job.source,
+        status: 'QUEUED',
+      });
+
+      await ctx.answerCbQuery('🚀 Job queued for Chrome Extension!');
+      return ctx.reply(
+        `🚀 <b>Queued for Extension:</b> <b>${escapeHtml(job.title)}</b> @ <b>${escapeHtml(job.company)}</b>\n\n` +
+        `Click your TeleHire Chrome Extension icon and tap <b>[Open & Process Next Queued Job]</b> to autofill.`,
+        { parse_mode: 'HTML' }
+      );
+    } catch (err) {
+      return ctx.answerCbQuery('Could not queue job. Please try again.');
+    }
+  });
+
   bot.action('skip_job', async (ctx) => {
     await ctx.answerCbQuery('Skipped');
   });
@@ -650,19 +689,23 @@ async function sendAutoJobsChunk(ctx, user) {
     const globalIdx = offset + i;
     const jobNum = globalIdx + 1;
 
+    const isCompatible = job.extensionCompatible || job.sourceType === 'AUTO';
     const jobCard = 
       `<b>${jobNum}. ${escapeHtml(job.title)}</b> @ <b>${escapeHtml(job.company)}</b>\n` +
       `📍 ${escapeHtml(job.location)} | <b>${escapeHtml(job.source)}</b> | Score: ${job.experience_score || 15} (fresher)\n` +
       `🔗 <a href="${job.job_url}">${escapeHtml(job.job_url)}</a>\n` +
-      `✅ <i>Safe auto-apply - I will apply, you get email - Direct ATS</i>`;
+      (isCompatible 
+        ? `✅ <b>✓ Chrome Extension Auto-Fill Supported</b>\n<i>(Paced autofill · Stops at Review for your manual submit)</i>`
+        : `⚠ <b>Manual application required</b>`);
 
     const buttons = Markup.inlineKeyboard([
       [
-        Markup.button.callback(`✅ Apply - Job ${jobNum}`, `apply_auto_${globalIdx}`),
-        Markup.button.callback(`⏭️ Skip`, `skip_job`),
+        Markup.button.callback(`🚀 Queue for Extension - #${jobNum}`, `queue_job_${globalIdx}`),
+        Markup.button.url(`🔗 Open Link`, job.job_url),
       ],
       [
-        Markup.button.url(`🔗 Open Link`, job.job_url),
+        Markup.button.callback(`⏭️ Skip`, `skip_job`),
+        Markup.button.callback(`⭐ Save`, `save_job`),
       ]
     ]);
 
@@ -694,7 +737,7 @@ async function sendManualJobsChunk(ctx, user) {
   }
 
   await ctx.reply(
-    `🔗 <b>MANUAL APPLY (You apply via link)</b> — Showing ${offset + 1}-${offset + chunk.length} of ${cached.manualJobs.length}:\n` +
+    `🔗 <b>APPLICATION OPPORTUNITIES</b> — Showing ${offset + 1}-${offset + chunk.length} of ${cached.manualJobs.length}:\n` +
     `<i>(Cutshort · Hirist · Internshala · LinkedIn — 100% 0-1 yr Fresher)</i>`,
     { parse_mode: 'HTML' }
   );
@@ -703,12 +746,15 @@ async function sendManualJobsChunk(ctx, user) {
     const job = chunk[i];
     const globalIdx = offset + i;
     const jobNum = globalIdx + 1;
+    const isCompatible = job.extensionCompatible;
 
     const jobCard = 
       `<b>${jobNum}. ${escapeHtml(job.title)}</b> @ <b>${escapeHtml(job.company)}</b>\n` +
       `📍 ${escapeHtml(job.location)} | <b>${escapeHtml(job.source)}</b> | Real live link\n` +
       `🔗 <a href="${job.job_url}">${escapeHtml(job.job_url)}</a>\n` +
-      `🔗 <i>Manual apply - You apply via link (Use Chrome Extension for safe fill)</i>`;
+      (isCompatible 
+        ? `✅ <b>✓ Chrome Extension Auto-Fill Supported</b>`
+        : `⚠ <b>Manual application required</b>`);
 
     const buttons = Markup.inlineKeyboard([
       [

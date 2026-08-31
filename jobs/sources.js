@@ -566,7 +566,16 @@ async function fetchLiveJobs(role, location, userExpYears = 0) {
 
   // Live check: keep AUTO safe immediately, check manual URLs
   let liveChecked = [];
+  const supportedPlatforms = ['workable', 'lever', 'greenhouse', 'ashby', 'linkedin', 'naukri', 'keka'];
   for (const j of afterLoc) {
+    const pName = (j.source || '').toLowerCase();
+    const urlLower = (j.job_url || '').toLowerCase();
+    const isCompatible = supportedPlatforms.some(sp => pName.includes(sp) || urlLower.includes(sp));
+
+    j.applicationPlatform = j.source || 'Direct Employer';
+    j.applicationMode = isCompatible ? 'EXTENSION_AUTOFILL' : 'MANUAL_REQUIRED';
+    j.extensionCompatible = isCompatible;
+
     if (j.sourceType === 'AUTO') {
       liveChecked.push(j);
     } else {

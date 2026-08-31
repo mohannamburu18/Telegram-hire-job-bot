@@ -293,6 +293,131 @@ async function getProfileHandler(req, res) {
   }
 }
 
+/**
+ * Application Queue Handlers
+ */
+const ApplicationQueue = require('../models/ApplicationQueue');
+
+async function addToQueueHandler(req, res) {
+  res.header('Access-Control-Allow-Origin', '*');
+  try {
+    const { email, license, jobs } = req.body;
+    if (!email) return res.status(400).json({ success: false, error: 'Email required' });
+
+    const user = await User.findOne({ email: email.trim().toLowerCase() });
+    if (!user) return res.status(404).json({ success: false, error: 'User not found' });
+
+    if (license && user.extension_license_key && user.extension_license_key !== license.trim().toUpperCase()) {
+      return res.status(401).json({ success: false, error: 'Invalid license key' });
+    }
+
+    if (!Array.isArray(jobs) || jobs.length === 0) {
+      return res.status(400).json({ success: false, error: 'No jobs provided to queue' });
+    }
+
+    const queuedTasks = [];
+    for (const j of jobs) {
+      const taskId = `TASK-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`;
+      const task = await ApplicationQueue.create({
+        user_id: user._id,
+        telegram_id: user.telegram_id,
+        task_id: taskId,
+        job_url: j.job_url || j.url,
+        title: j.title || 'Job Application',
+        company: j.company || 'Employer',
+        platform: j.source || 'ATS',
+        status: 'QUEUED',
+      });
+      queuedTasks.push(task);
+    }
+
+    return res.status(200).json({ success: true, count: queuedTasks.length, tasks: queuedTasks });
+  } catch (err) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+}
+
+async function getPendingTaskHandler(req, res) {
+  res.header('Access-Control-Allow-Origin', '*');
+  try {
+    const email = (req.query.email || '').trim().toLowerCase();
+    const license = (req.query.license || '').trim().toUpperCase();
+
+    if (!email) return res.status(400).json({ success: false, error: 'Email required' });
+
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ success: false, error: 'User not found' });
+
+    if (license && user.extension_license_key && user.extension_license_key !== license) {
+      return res.status(401).json({ success: false, error: 'Invalid license key' });
+    }
+
+    const pendingTask = await ApplicationQueue.findOne({
+      user_id: user._id,
+      status: 'QUEUED',
+    }).sort({ createdAt: 1 });
+
+    if (!pendingTask) {
+      return res.status(200).json({ success: true, task: null });
+    }
+
+    pendingTask.status = 'OPENING';
+    await pendingTask.save();
+
+    return res.status(200).json({
+      success: true,
+      task: {
+        taskId: pendingTask.task_id,
+        jobUrl: pendingTask.job_url,
+        title: pendingTask.title,
+        company: pendingTask.company,
+        platform: pendingTask.platform,
+      },
+    });
+  } catch (err) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+}
+
+async function updateTaskStatusHandler(req, res) {
+  res.header('Access-Control-Allow-Origin', '*');
+  try {
+    const { taskId, status, reason, fieldsFilled } = req.body;
+    if (!taskId) return res.status(400).json({ success: false, error: 'taskId required' });
+
+    const task = await ApplicationQueue.findOne({ task_id: taskId });
+    if (!task) return res.status(404).json({ success: false, error: 'Task not found' });
+
+    if (status) task.status = status;
+    if (reason) task.reason = reason;
+    if (fieldsFilled !== undefined) task.fields_filled = fieldsFilled;
+    await task.save();
+
+    return res.status(200).json({ success: true, task });
+  } catch (err) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+}
+
+async function getQueueStatusHandler(req, res) {
+  res.header('Access-Control-Allow-Origin', '*');
+  try {
+    const email = (req.query.email || '').trim().toLowerCase();
+    if (!email) return res.status(400).json({ success: false, error: 'Email required' });
+
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ success: false, error: 'User not found' });
+
+    const tasks = await ApplicationQueue.find({ user_id: user._id }).sort({ createdAt: -1 }).limit(20);
+    const queuedCount = await ApplicationQueue.countDocuments({ user_id: user._id, status: 'QUEUED' });
+    const readyCount = await ApplicationQueue.countDocuments({ user_id: user._id, status: 'READY_FOR_MANUAL_SUBMIT' });
+
+    return res.status(200).json({ success: true, queuedCount, readyCount, tasks });
+  } catch (err) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+}
+
 // Health Check
 router.get(['/health', '/api/health'], (req, res) => {
   res.header('Access-Control-Allow-Origin', '*');
@@ -305,6 +430,12 @@ router.post(['/extension/useQuota', '/useQuota', '/api/extension/useQuota'], use
 router.get(['/extension/dailyCount', '/dailyCount', '/api/extension/dailyCount'], dailyCountHandler);
 router.get(['/getProfile', '/user/getProfile', '/api/user/getProfile'], getProfileHandler);
 
+// Application Queue Routes
+router.post(['/queue/add', '/api/queue/add'], addToQueueHandler);
+router.get(['/queue/pending', '/api/queue/pending'], getPendingTaskHandler);
+router.post(['/queue/updateStatus', '/api/queue/updateStatus'], updateTaskStatusHandler);
+router.get(['/queue/status', '/api/queue/status'], getQueueStatusHandler);
+
 // Extension Zip Download
 router.get(['/download/extension.zip', '/extension/whatshire-extension.zip'], (req, res) => {
   const zipPath = path.join(__dirname, '..', 'whatshire-extension.zip');
@@ -316,3 +447,4 @@ router.get(['/download/extension.zip', '/extension/whatshire-extension.zip'], (r
 });
 
 module.exports = router;
+
