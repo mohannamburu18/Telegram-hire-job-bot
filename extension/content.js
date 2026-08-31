@@ -5,6 +5,7 @@
 
 (function () {
   let isFilling = false;
+  window.__whatshire_dismissed = false;
 
   // 1. Human-Like Typing Engine
   async function humanType(element, text) {
@@ -62,20 +63,21 @@
     if (isFilling) return;
     isFilling = true;
 
-    // A. Check Email in Storage
-    const storage = await new Promise(r => chrome.storage.local.get(['userEmail'], r));
+    // A. Check Email & License in Storage
+    const storage = await new Promise(r => chrome.storage.local.get(['userEmail', 'userLicense'], r));
     const email = storage.userEmail;
+    const license = storage.userLicense || '';
 
     if (!email) {
-      showNotification('⚠️ Please click the WhatsHire extension icon and enter your Telegram email to sync your profile first.', 'warning');
+      showNotification('⚠️ Please click the WhatsHire extension icon and enter your Telegram email & license key to sync profile first.', 'warning');
       isFilling = false;
       return;
     }
 
     // B. Check Subscription via Background
-    const subCheck = await chrome.runtime.sendMessage({ type: 'CHECK_SUBSCRIPTION', email });
+    const subCheck = await chrome.runtime.sendMessage({ type: 'CHECK_SUBSCRIPTION', email, license });
     if (!subCheck.allowed) {
-      showNotification(`🔒 ${subCheck.reason || 'Paid subscription required to use Safe Filler.'}`, 'error');
+      showNotification(`🔒 ${subCheck.reason || subCheck.message || 'Paid subscription required.'}`, 'error');
       isFilling = false;
       return;
     }
@@ -143,6 +145,7 @@
       type: 'USE_QUOTA',
       payload: {
         email,
+        license,
         platform: window.location.hostname.replace('www.', ''),
         jobTitle: document.title.split('|')[0].split('-')[0].trim() || 'Job Application',
         company: window.location.hostname,
@@ -158,8 +161,9 @@
     isFilling = false;
   }
 
-  // 4. Injected Top Banner UI
+  // 4. Injected Top Banner UI (Pinned & Persistent)
   function injectTopBanner() {
+    if (window.__whatshire_dismissed) return;
     if (document.getElementById('whatshire-floating-banner')) return;
 
     const banner = document.createElement('div');
@@ -168,23 +172,27 @@
       <div class="wh-banner-content">
         <div class="wh-banner-left">
           <span class="wh-logo-badge">⚡ WhatsHire</span>
-          <span class="wh-banner-text">Safe Form Filler detected a job application. Fill with your verified profile?</span>
+          <span class="wh-banner-text">Safe Form Filler detected. Fill form with your verified profile?</span>
         </div>
         <div class="wh-banner-actions">
           <button id="wh-btn-fill" class="wh-btn-primary">⚡ Fill Form Safely</button>
-          <button id="wh-btn-close" class="wh-btn-ghost">✕</button>
+          <button id="wh-btn-close" class="wh-btn-ghost" title="Dismiss">✕</button>
         </div>
       </div>
     `;
 
-    document.body.appendChild(banner);
+    // Append directly to body / documentElement outside SPA container
+    (document.body || document.documentElement).appendChild(banner);
 
-    document.getElementById('wh-btn-fill')?.addEventListener('click', () => {
+    document.getElementById('wh-btn-fill')?.addEventListener('click', (e) => {
+      e.stopPropagation();
       fillFormSafely();
     });
 
-    document.getElementById('wh-btn-close')?.addEventListener('click', () => {
-      banner.style.display = 'none';
+    document.getElementById('wh-btn-close')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      window.__whatshire_dismissed = true;
+      banner.remove();
     });
   }
 
@@ -194,7 +202,7 @@
     if (!toast) {
       toast = document.createElement('div');
       toast.id = 'whatshire-toast';
-      document.body.appendChild(toast);
+      (document.body || document.documentElement).appendChild(toast);
     }
 
     toast.className = `wh-toast wh-toast-${type}`;
@@ -236,7 +244,7 @@
       </div>
     `;
 
-    document.body.appendChild(modal);
+    (document.body || document.documentElement).appendChild(modal);
 
     document.getElementById('wh-modal-ok')?.addEventListener('click', () => {
       modal.remove();
@@ -251,7 +259,22 @@
     }
   });
 
-  // Auto-detect forms on page load & DOM changes
-  setTimeout(injectTopBanner, 1500);
-})();
+  // Persistent Injection: Check periodically and observe DOM changes
+  setTimeout(injectTopBanner, 1000);
 
+  setInterval(() => {
+    if (!window.__whatshire_dismissed && !document.getElementById('whatshire-floating-banner')) {
+      injectTopBanner();
+    }
+  }, 1500);
+
+  const observer = new MutationObserver(() => {
+    if (!window.__whatshire_dismissed && !document.getElementById('whatshire-floating-banner')) {
+      injectTopBanner();
+    }
+  });
+
+  if (document.body) {
+    observer.observe(document.body, { childList: true });
+  }
+})();

@@ -13,7 +13,7 @@
         <div class="wh-logo-icon">WH</div>
         <div>
           <h2>WhatsHire</h2>
-          <span class="wh-tagline">Safe Job Form Filler</span>
+          <span class="wh-tagline">Safe Job Form Filler (99% Safe)</span>
         </div>
       </div>
       <span class="wh-version-tag">Paid Only</span>
@@ -22,13 +22,13 @@
     <!-- Email & License Key Sync Box -->
     <div class="wh-card wh-sync-card">
       <label for="user-email">Telegram Account Email:</label>
-      <input type="email" id="user-email" placeholder="jane@example.com" class="wh-input">
+      <input type="email" id="user-email" placeholder="ncttdp@gmail.com" class="wh-input">
 
       <label for="user-license" style="margin-top: 8px;">Extension License Key:</label>
-      <input type="text" id="user-license" placeholder="WH-XXXX-XXXX-XXXX" class="wh-input">
+      <input type="text" id="user-license" placeholder="WH-1E92-DD70-B077" class="wh-input">
 
       <button id="btn-sync" class="wh-btn-sync" style="width: 100%; margin-top: 10px;">Verify & Sync Profile</button>
-      <span id="sync-status" class="wh-status-text">Enter your Telegram email & license key to activate</span>
+      <span id="sync-status" class="wh-status-text">Enter Telegram email & license key to activate</span>
     </div>
 
     <!-- Subscription Status Display -->
@@ -42,6 +42,16 @@
         ⚡ Fill Job Form on Current Page
       </button>
     </div>
+
+    <!-- Server Settings (Collapsible) -->
+    <details class="wh-settings-details">
+      <summary style="font-size: 10px; color: #64748b; cursor: pointer; padding: 2px 0;">⚙️ Server Settings</summary>
+      <div style="margin-top: 6px; display: flex; flex-direction: column; gap: 4px;">
+        <label for="backend-url" style="font-size: 10px; color: #94a3b8;">Backend API URL:</label>
+        <input type="text" id="backend-url" value="http://localhost:3000" placeholder="http://localhost:3000" class="wh-input" style="font-size: 10px; padding: 4px 6px;">
+        <span style="font-size: 9px; color: #64748b;">(Use http://localhost:3000 for local or your Render URL)</span>
+      </div>
+    </details>
 
     <!-- Safety Guarantee -->
     <div class="wh-card wh-safety-card">
@@ -59,7 +69,7 @@
     <!-- Footer Links -->
     <footer class="wh-footer">
       <a href="https://t.me/TeleHireJOB_bot" target="_blank" class="wh-bot-link">
-        🤖 Open WhatsHire Telegram Bot (/extension for key)
+        🤖 Open @TeleHireJOB_bot (/extension for key)
       </a>
     </footer>
   </div>

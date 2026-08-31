@@ -1,9 +1,10 @@
 /**
- * WhatsHire Safe Filler - Background Service Worker
+ * WhatsHire Safe Filler - Background Service Worker (Phase 5.1 Fixed)
  * Enforces Paid Subscription, Quota Decrement, and Daily Safety Limits
  */
 
 const DEFAULT_BACKEND = 'http://localhost:3000';
+const PRODUCTION_FALLBACK = 'https://telegram-hire-job-bot.onrender.com';
 
 function getTodayKey() {
   return new Date().toISOString().split('T')[0];
@@ -39,18 +40,49 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 });
 
+async function fetchWithRetry(url, options = {}, retries = 2) {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+      const res = await fetch(url, { ...options, signal: controller.signal });
+      clearTimeout(timeoutId);
+      return await res.json();
+    } catch (err) {
+      if (attempt === retries) throw err;
+      await new Promise(r => setTimeout(r, 2000));
+    }
+  }
+}
+
 async function handleCheckSubscription(email, license = '') {
-  if (!email) return { allowed: false, message: 'Please enter your Telegram email' };
+  if (!email) return { allowed: false, reason: 'Please enter your Telegram registered email.' };
+
+  const cleanEmail = email.trim().toLowerCase();
+  const cleanLicense = license.trim().toUpperCase();
 
   try {
     const backend = await getBackendUrl();
-    const res = await fetch(`${backend}/api/extension/verify?email=${encodeURIComponent(email)}&license=${encodeURIComponent(license)}`);
-    const data = await res.json();
+    const targetUrl = `${backend}/api/extension/verify?email=${encodeURIComponent(cleanEmail)}&license=${encodeURIComponent(cleanLicense)}`;
 
-    if (data.allowed) {
+    let data;
+    try {
+      data = await fetchWithRetry(targetUrl, { method: 'GET', headers: { 'Content-Type': 'application/json' } });
+    } catch (primaryErr) {
+      // If primary failed and was localhost, try production fallback or vice-versa
+      if (backend !== PRODUCTION_FALLBACK && !backend.includes('onrender.com')) {
+        const fallbackUrl = `${PRODUCTION_FALLBACK}/api/extension/verify?email=${encodeURIComponent(cleanEmail)}&license=${encodeURIComponent(cleanLicense)}`;
+        data = await fetchWithRetry(fallbackUrl, { method: 'GET', headers: { 'Content-Type': 'application/json' } });
+        chrome.storage.local.set({ customBackendUrl: PRODUCTION_FALLBACK });
+      } else {
+        throw primaryErr;
+      }
+    }
+
+    if (data && data.allowed) {
       chrome.storage.local.set({
-        userEmail: email,
-        userLicense: license,
+        userEmail: cleanEmail,
+        userLicense: cleanLicense,
         isPaid: true,
         plan: data.plan,
         quotaLeft: data.quotaLeft,
@@ -66,15 +98,18 @@ async function handleCheckSubscription(email, license = '') {
 
     return data;
   } catch (err) {
-    return { allowed: false, message: 'Could not connect to WhatsHire server. Please make sure the app is running.' };
+    return {
+      allowed: false,
+      reason: `Could not connect to WhatsHire server. Please verify: 1) Server is running, 2) Internet connection is active. (Error: ${err.message})`,
+    };
   }
 }
 
 async function handleGetProfile(email) {
   try {
     const backend = await getBackendUrl();
-    const res = await fetch(`${backend}/api/user/getProfile?email=${encodeURIComponent(email)}`);
-    return await res.json();
+    const targetUrl = `${backend}/api/user/getProfile?email=${encodeURIComponent(email.trim().toLowerCase())}`;
+    return await fetchWithRetry(targetUrl);
   } catch (err) {
     return { success: false, error: err.message };
   }
@@ -83,14 +118,13 @@ async function handleGetProfile(email) {
 async function handleUseQuota(payload) {
   try {
     const backend = await getBackendUrl();
-    const res = await fetch(`${backend}/api/user/useQuota`, {
+    const targetUrl = `${backend}/api/user/useQuota`;
+    const data = await fetchWithRetry(targetUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     });
-    const data = await res.json();
 
-    // Increment today's local fill counter
     const todayKey = getTodayKey();
     const usage = await getDailyUsage();
     const newCount = usage.count + 1;
@@ -118,4 +152,3 @@ async function getDailyUsage() {
     });
   });
 }
-

@@ -10,29 +10,52 @@ function getTodayStr() {
   return new Date().toISOString().split('T')[0];
 }
 
+function normalizeLicense(key = '') {
+  return String(key).trim().toUpperCase().replace(/[\s-]/g, '');
+}
+
 /**
- * 1. GET /api/extension/verify?email=...&license=...
- * Authenticates paid user and license key for Chrome Extension
+ * Verification Handler for Chrome Extension
  */
-router.get('/extension/verify', async (req, res) => {
+async function verifyHandler(req, res) {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+
   try {
-    const email = (req.query.email || '').trim().toLowerCase();
-    const license = (req.query.license || '').trim().toUpperCase();
+    const rawEmail = req.query.email || '';
+    const rawLicense = req.query.license || '';
+
+    const email = rawEmail.trim().toLowerCase();
+    const enteredLicenseNorm = normalizeLicense(rawLicense);
 
     if (!email) {
-      return res.status(400).json({ allowed: false, message: 'Email parameter required.' });
+      return res.status(400).json({
+        allowed: false,
+        reason: 'Email parameter required. Please enter your Telegram registered email.',
+      });
     }
 
     const user = await User.findOne({ email });
     if (!user) {
       return res.status(404).json({
         allowed: false,
-        message: 'No Telegram account found with this email. Please start @TeleHireJOB_bot on Telegram first.',
+        reason: `Email not found in Telegram bot. Entered: "${rawEmail}". Please use the same email registered in @TeleHireJOB_bot.`,
       });
     }
 
     if (user.is_banned) {
-      return res.status(403).json({ allowed: false, message: 'Account suspended.' });
+      return res.status(403).json({ allowed: false, reason: 'Account has been suspended.' });
+    }
+
+    // Check License match (normalized ignoring case and hyphens)
+    const storedLicense = user.extension_license_key || '';
+    const storedLicenseNorm = normalizeLicense(storedLicense);
+
+    if (enteredLicenseNorm && storedLicenseNorm && enteredLicenseNorm !== storedLicenseNorm) {
+      return res.status(200).json({
+        allowed: false,
+        reason: `License key mismatch. Stored: "${storedLicense}" | Entered: "${rawLicense}". Please copy exact key from /extension command in @TeleHireJOB_bot.`,
+      });
     }
 
     const isGod = user.trial_applications_used < -1000;
@@ -47,6 +70,8 @@ router.get('/extension/verify', async (req, res) => {
         expiry: '2099-12-31',
         dailyLimit: 40,
         userName: user.name || 'Admin',
+        name: user.name,
+        email: user.email,
         message: 'God Mode verified. Unlimited safe form fills active.',
       });
     }
@@ -57,7 +82,7 @@ router.get('/extension/verify', async (req, res) => {
         isPaid: false,
         plan: 'FREE',
         quotaLeft: 0,
-        message: 'You are a Free user. This extension is for Paid users only. Please buy a plan in Telegram bot @TeleHireJOB_bot to unlock.',
+        reason: 'Free user - Paid plan required. Please buy a plan in Telegram bot @TeleHireJOB_bot with /buy.',
       });
     }
 
@@ -70,16 +95,7 @@ router.get('/extension/verify', async (req, res) => {
         isPaid: false,
         plan: 'EXPIRED',
         quotaLeft: 0,
-        message: 'Subscription expired. Please renew your plan in Telegram bot @TeleHireJOB_bot.',
-      });
-    }
-
-    // Check license match if user has license set
-    if (license && user.extension_license_key && user.extension_license_key.toUpperCase() !== license) {
-      return res.status(200).json({
-        allowed: false,
-        isPaid: true,
-        message: 'Invalid license key. Please check your license key in Telegram bot with /extension or /myplan.',
+        reason: `Subscription expired on ${user.plan_expiry.toISOString().split('T')[0]}. Please renew in @TeleHireJOB_bot.`,
       });
     }
 
@@ -93,7 +109,7 @@ router.get('/extension/verify', async (req, res) => {
         isPaid: true,
         plan: planConfig.name,
         quotaLeft: 0,
-        message: 'Application quota exhausted. Please renew or top-up in Telegram bot @TeleHireJOB_bot.',
+        reason: `Quota over (${user.trial_applications_used} applications used). Please renew or top-up in @TeleHireJOB_bot.`,
       });
     }
 
@@ -110,18 +126,23 @@ router.get('/extension/verify', async (req, res) => {
       expiry: user.plan_expiry ? user.plan_expiry.toISOString().split('T')[0] : '30 Days',
       dailyLimit: 40,
       userName: user.name || 'Subscriber',
+      name: user.name,
+      email: user.email,
       message: `Paid plan verified (${planConfig.name}). Safe form filling active.`,
     });
   } catch (err) {
     console.error('[EXTENSION VERIFY ERROR]:', err);
-    return res.status(500).json({ allowed: false, message: 'Server error checking subscription.' });
+    return res.status(500).json({ allowed: false, reason: `Server error: ${err.message}` });
   }
-});
+}
 
 /**
- * 2. POST /api/extension/useQuota
+ * Use Quota Handler
  */
-router.post('/extension/useQuota', async (req, res) => {
+async function useQuotaHandler(req, res) {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+
   try {
     const email = (req.body.email || '').trim().toLowerCase();
     const platform = req.body.platform || 'Extension Form Fill';
@@ -142,7 +163,6 @@ router.post('/extension/useQuota', async (req, res) => {
       user.trial_applications_used = (user.trial_applications_used || 0) + 1;
     }
 
-    // Daily count tracking
     const todayStr = getTodayStr();
     if (user.daily_fills_date !== todayStr) {
       user.daily_fills_date = todayStr;
@@ -175,12 +195,13 @@ router.post('/extension/useQuota', async (req, res) => {
   } catch (err) {
     return res.status(500).json({ success: false, error: err.message });
   }
-});
+}
 
 /**
- * 3. GET /api/extension/dailyCount?email=...
+ * Daily Count Handler
  */
-router.get('/extension/dailyCount', async (req, res) => {
+async function dailyCountHandler(req, res) {
+  res.header('Access-Control-Allow-Origin', '*');
   try {
     const email = (req.query.email || '').trim().toLowerCase();
     const user = await User.findOne({ email });
@@ -192,20 +213,13 @@ router.get('/extension/dailyCount', async (req, res) => {
   } catch (err) {
     return res.status(500).json({ count: 0, limit: 40 });
   }
-});
+}
 
 /**
- * 4. GET /api/user/checkSubscription (alias)
+ * Profile Handler
  */
-router.get('/checkSubscription', async (req, res) => {
-  req.url = '/extension/verify';
-  return router.handle(req, res);
-});
-
-/**
- * 5. GET /api/user/getProfile?email=...
- */
-router.get('/getProfile', async (req, res) => {
+async function getProfileHandler(req, res) {
+  res.header('Access-Control-Allow-Origin', '*');
   try {
     const email = (req.query.email || '').trim().toLowerCase();
     const user = await User.findOne({ email });
@@ -238,20 +252,22 @@ router.get('/getProfile', async (req, res) => {
   } catch (err) {
     return res.status(500).json({ success: false, error: err.message });
   }
+}
+
+// Health Check
+router.get(['/health', '/api/health'], (req, res) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.status(200).json({ status: 'ok', message: 'WhatsHire server running' });
 });
 
-/**
- * 6. POST /api/user/useQuota (alias)
- */
-router.post('/useQuota', async (req, res) => {
-  req.url = '/extension/useQuota';
-  return router.handle(req, res);
-});
+// Extension Routes (both root & prefixed)
+router.get(['/extension/verify', '/verify', '/checkSubscription', '/api/extension/verify'], verifyHandler);
+router.post(['/extension/useQuota', '/useQuota', '/api/extension/useQuota'], useQuotaHandler);
+router.get(['/extension/dailyCount', '/dailyCount', '/api/extension/dailyCount'], dailyCountHandler);
+router.get(['/getProfile', '/user/getProfile', '/api/user/getProfile'], getProfileHandler);
 
-/**
- * 7. Download Extension Zip File Endpoint
- */
-router.get('/download/extension.zip', (req, res) => {
+// Extension Zip Download
+router.get(['/download/extension.zip', '/extension/whatshire-extension.zip'], (req, res) => {
   const zipPath = path.join(__dirname, '..', 'whatshire-extension.zip');
   if (fs.existsSync(zipPath)) {
     res.download(zipPath, 'whatshire-extension.zip');
