@@ -1,10 +1,11 @@
 /**
- * TeleHire Safe Job Form Filler - Core Autofill Engine (Phase 2 Repaired)
- * 99% Safe · React/Angular Native Setters · Combobox · Radios · Selects · Verification
+ * TeleHire Safe Job Form Filler - Complete Engine & Multi-Step Orchestrator (Phase 3)
+ * 99% Safe · React Native Setters · Multi-Step LinkedIn Easy Apply · Safety Review Gate
  */
 
 (function () {
   let isFilling = false;
+  let isOrchestrating = false;
   window.__telehire_dismissed = false;
   const filledSignatures = new Set();
 
@@ -12,14 +13,24 @@
   window.__telehire_diagnostics = {
     platform: window.location.hostname.replace('www.', ''),
     timestamp: new Date().toISOString(),
+    easyApply: false,
+    currentStep: 'INIT',
+    stepIndex: 0,
     fieldsDetected: 0,
     fieldsFilled: 0,
     fieldsSkipped: 0,
     fieldsFailed: 0,
+    navigation: {
+      attempted: false,
+      successful: false,
+      lastAction: null,
+    },
+    status: 'READY',
+    reason: null,
     fields: [],
   };
 
-  function logDiag(type, fieldName, details) {
+  function logDiag(type, fieldName, details = {}) {
     const entry = {
       timestamp: new Date().toISOString(),
       type,
@@ -48,7 +59,7 @@
     return rect.width > 0 && rect.height > 0;
   }
 
-  // 2. React Native Value Setter (Bypasses React _valueTracker bug)
+  // 2. React Native Value Setter
   function setNativeValue(element, value) {
     if (!element || !element.isConnected) return;
     try {
@@ -65,34 +76,32 @@
         element.value = value;
       }
 
-      // Update React value tracker if present
       if (element._valueTracker) {
         element._valueTracker.setValue(value);
       }
 
-      // Dispatch comprehensive synthetic events
       element.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
       element.dispatchEvent(new Event('change', { bubbles: true, composed: true }));
-    } catch (err) {
+    } catch (_) {
       element.value = value;
       element.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
       element.dispatchEvent(new Event('change', { bubbles: true, composed: true }));
     }
   }
 
-  // 3. Human-Like Keystroke Simulator (React-Compatible)
+  // 3. Human-Like Keystroke Simulator
   async function humanType(element, text) {
     if (!element || !element.isConnected || text === undefined || text === null) return false;
     element.focus();
     setNativeValue(element, '');
-    await new Promise(r => setTimeout(r, 40));
+    await new Promise(r => setTimeout(r, 30));
 
     let accumulated = '';
     const str = String(text);
     for (let i = 0; i < str.length; i++) {
       const char = str[i];
       accumulated += char;
-      const keyDelay = Math.floor(Math.random() * (50 - 20 + 1)) + 20;
+      const keyDelay = Math.floor(Math.random() * (45 - 20 + 1)) + 20;
 
       element.dispatchEvent(new KeyboardEvent('keydown', { key: char, bubbles: true, composed: true }));
       setNativeValue(element, accumulated);
@@ -111,26 +120,22 @@
     if (!el) return '';
     let labelText = '';
 
-    // A. aria-labelledby
     const labelledby = el.getAttribute('aria-labelledby');
     if (labelledby) {
       const labelEl = document.getElementById(labelledby);
       if (labelEl && labelEl.innerText.trim()) labelText += ' ' + labelEl.innerText.trim();
     }
 
-    // B. Explicit <label for="...">
     if (el.id) {
       const labelFor = document.querySelector(`label[for="${CSS.escape(el.id)}"]`);
       if (labelFor && labelFor.innerText.trim()) labelText += ' ' + labelFor.innerText.trim();
     }
 
-    // C. Wrapping <label>
     const wrappingLabel = el.closest('label');
     if (wrappingLabel && wrappingLabel.innerText.trim()) {
       labelText += ' ' + wrappingLabel.innerText.trim();
     }
 
-    // D. Container Question (LinkedIn Easy Apply form item, fieldset, legend)
     const container = el.closest('.fb-dash-form-element, .jobs-easy-apply-form-section, fieldset, .form-group, .t-14, .artdeco-text-input--container');
     if (container) {
       const legend = container.querySelector('legend, label, .fb-dash-form-element__label, h3, span[aria-hidden="true"]');
@@ -139,7 +144,6 @@
       }
     }
 
-    // E. Attributes
     const ariaLabel = el.getAttribute('aria-label') || '';
     const placeholder = el.placeholder || '';
     const name = el.name || '';
@@ -228,12 +232,12 @@
       return { key: 'education', value: profile.education || 'Bachelor of Technology' };
     }
 
-    // 14. Work Authorization (India / Global)
-    if (norm.includes('authorized to work') || norm.includes('legally authorized') || norm.includes('eligible to work') || norm.includes('right to work')) {
+    // 14. Work Authorization
+    if (norm.includes('authorized to work') || norm.includes('legally authorized') || norm.includes('eligible to work') || norm.includes('right to work') || norm.includes('legal right')) {
       return { key: 'work_authorization', value: 'Yes' };
     }
 
-    // 15. Visa Sponsorship Requirement
+    // 15. Visa Sponsorship
     if (norm.includes('sponsorship') || norm.includes('require visa') || norm.includes('visa sponsorship') || norm.includes('will you require visa')) {
       return { key: 'visa_sponsorship', value: 'No' };
     }
@@ -244,7 +248,7 @@
     }
 
     // 17. Degree completion / 18+ years of age
-    if (norm.includes('18 years of age') || norm.includes('completed degree') || norm.includes('background check')) {
+    if (norm.includes('18 years of age') || norm.includes('completed degree') || norm.includes('background check') || norm.includes('valid driver')) {
       return { key: 'general_yes', value: 'Yes' };
     }
 
@@ -255,11 +259,7 @@
   function verifyField(el, expectedValue, fieldType) {
     if (!el || !el.isConnected) return false;
 
-    if (fieldType === 'radio') {
-      return el.checked === true;
-    }
-
-    if (fieldType === 'checkbox') {
+    if (fieldType === 'radio' || fieldType === 'checkbox') {
       return el.checked === true;
     }
 
@@ -269,17 +269,15 @@
       return Boolean(currentVal && selectedOption);
     }
 
-    // Text / Textarea / Combobox
     const actualVal = (el.value || '').trim();
     if (!actualVal) return false;
 
     const normActual = normalizeText(actualVal);
     const normExpected = normalizeText(String(expectedValue));
-
     return normActual.length > 0 && (normActual.includes(normExpected) || normExpected.includes(normActual));
   }
 
-  // 7. Native Select Handler (Normalized Profile Matching)
+  // 7. Native Select Handler
   async function fillSelectField(selectEl, labelText, profile) {
     if (!selectEl || !selectEl.options || selectEl.options.length === 0) return false;
     const mapping = mapFieldToProfile(labelText, selectEl, profile);
@@ -293,13 +291,11 @@
       const optText = normalizeText(opt.text || '');
       const optVal = normalizeText(opt.value || '');
 
-      // Exact or strong prefix match
       if (optText === expectedNorm || optVal === expectedNorm || optText.startsWith(expectedNorm) || expectedNorm.startsWith(optText)) {
         bestMatchIdx = i;
         break;
       }
 
-      // Handle Yes/No select options
       if ((expectedNorm === 'yes' && (optText === 'yes' || optVal === 'yes' || optVal === '1' || optVal === 'true')) ||
           (expectedNorm === 'no' && (optText === 'no' || optVal === 'no' || optVal === '0' || optVal === 'false'))) {
         bestMatchIdx = i;
@@ -307,7 +303,6 @@
       }
     }
 
-    // Fallback for country code selector (India +91)
     if (bestMatchIdx === -1 && (labelText.includes('country code') || labelText.includes('phone'))) {
       for (let i = 0; i < selectEl.options.length; i++) {
         const optText = normalizeText(selectEl.options[i].text || '');
@@ -322,14 +317,14 @@
       selectEl.selectedIndex = bestMatchIdx;
       setNativeValue(selectEl, selectEl.options[bestMatchIdx].value);
       selectEl.dispatchEvent(new Event('change', { bubbles: true, composed: true }));
-      await new Promise(r => setTimeout(r, 60));
+      await new Promise(r => setTimeout(r, 50));
       return verifyField(selectEl, selectEl.options[bestMatchIdx].value, 'select');
     }
 
     return false;
   }
 
-  // 8. Custom Combobox & Typeahead Handler (LinkedIn City / Location / Education)
+  // 8. Custom Combobox & Typeahead Handler
   async function fillComboboxField(inputEl, labelText, profile) {
     if (!inputEl || !inputEl.isConnected) return false;
     const mapping = mapFieldToProfile(labelText, inputEl, profile);
@@ -337,10 +332,8 @@
 
     const targetText = String(mapping.value);
     await humanType(inputEl, targetText);
-    await new Promise(r => setTimeout(r, 350)); // Wait for typeahead options to render
+    await new Promise(r => setTimeout(r, 350));
 
-    // Detect dropdown listbox
-    const container = inputEl.closest('.fb-dash-form-element, .jobs-easy-apply-form-section, div') || document.body;
     const optionSelectors = [
       '[role="listbox"] [role="option"]',
       '.artdeco-typeahead__result',
@@ -370,7 +363,7 @@
         }
       }
 
-      if (!matchedOpt) matchedOpt = optionElements[0]; // Best effort top option
+      if (!matchedOpt) matchedOpt = optionElements[0];
       if (matchedOpt) {
         matchedOpt.click();
         matchedOpt.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, composed: true }));
@@ -382,7 +375,7 @@
     return verifyField(inputEl, targetText, 'combobox');
   }
 
-  // 9. Radio Button Group Handler (Yes/No & Work Authorization)
+  // 9. Radio Button Group Handler
   async function fillRadioGroup(radioInputs, labelText, profile) {
     if (!radioInputs || radioInputs.length === 0) return false;
     const mapping = mapFieldToProfile(labelText, radioInputs[0], profile);
@@ -418,12 +411,11 @@
     return false;
   }
 
-  // 10. Checkbox Handler (Terms & Consent)
+  // 10. Checkbox Handler
   async function fillCheckbox(checkboxEl, labelText) {
     if (!checkboxEl || !isVisible(checkboxEl)) return false;
     const norm = normalizeText(labelText);
 
-    // Only agree to explicit application consent / terms
     if (
       norm.includes('agree') || norm.includes('consent') || norm.includes('terms') || norm.includes('privacy') || norm.includes('certify') || norm.includes('acknowledge')
     ) {
@@ -440,7 +432,381 @@
     return false;
   }
 
-  // 11. Central Single-Step Form Filling Engine
+  // =========================================================================
+  // LINKEDIN EASY APPLY MULTI-STEP ORCHESTRATION ENGINE (PHASE 3)
+  // =========================================================================
+
+  // A. Modal Detector
+  function detectEasyApplyModal() {
+    const selectors = [
+      '.jobs-easy-apply-modal',
+      '[data-easy-apply-modal]',
+      'div[role="dialog"].artdeco-modal',
+      '.jobs-apply-modal',
+      'div[data-test-modal-id="easy-apply-modal"]',
+    ];
+
+    for (const sel of selectors) {
+      const modal = document.querySelector(sel);
+      if (modal && isVisible(modal)) {
+        return { isEasyApply: true, modal };
+      }
+    }
+
+    return { isEasyApply: false, modal: null };
+  }
+
+  // B. Current Step Stage & Title Detector
+  function detectEasyApplyStep(modal) {
+    if (!modal || !modal.isConnected) {
+      return { stage: 'UNKNOWN', title: '', isReview: false, isSubmit: false, signature: '' };
+    }
+
+    const headerEl = modal.querySelector('h2, h3, .jobs-easy-apply-modal__header, .artdeco-modal__header, [data-test-modal-header]');
+    const headerText = headerEl ? headerEl.innerText.trim() : '';
+    const normHeader = normalizeText(headerText);
+    const fullText = normalizeText(modal.innerText);
+
+    let stage = 'UNKNOWN';
+    let isReview = false;
+    let isSubmit = false;
+
+    // Check for review / submit indicators
+    if (normHeader.includes('review') || fullText.includes('review your application') || modal.querySelector('.jobs-easy-apply-review')) {
+      stage = 'REVIEW';
+      isReview = true;
+    } else if (normHeader.includes('contact') || fullText.includes('contact info')) {
+      stage = 'CONTACT_INFO';
+    } else if (normHeader.includes('resume') || fullText.includes('upload resume') || modal.querySelector('.jobs-document-upload__file-selection')) {
+      stage = 'RESUME';
+    } else if (normHeader.includes('additional') || normHeader.includes('questions')) {
+      stage = 'ADDITIONAL_QUESTIONS';
+    } else if (normHeader.includes('work authorization') || normHeader.includes('authorization')) {
+      stage = 'WORK_AUTHORIZATION';
+    } else if (normHeader.includes('education') || normHeader.includes('qualification')) {
+      stage = 'EDUCATION';
+    } else if (normHeader.includes('voluntary') || normHeader.includes('diversity')) {
+      stage = 'VOLUNTARY_INFO';
+    }
+
+    const submitBtn = modal.querySelector('button[aria-label*="submit" i], button[aria-label*="Submit application" i]');
+    if (submitBtn && isVisible(submitBtn)) {
+      isSubmit = true;
+    }
+
+    const fieldCount = modal.querySelectorAll('input, textarea, select, [role="combobox"]').length;
+    const signature = `${stage}_${headerText.slice(0, 30)}_${fieldCount}`;
+
+    return {
+      stage,
+      title: headerText || stage,
+      modal,
+      isReview,
+      isSubmit,
+      signature,
+    };
+  }
+
+  // C. Required Field Completion Checker (Prevents clicking Next with missing answers)
+  function checkRequiredFieldsIncomplete(modal) {
+    if (!modal || !modal.isConnected) return { hasIncomplete: false };
+
+    // 1. Check for visible LinkedIn error messages
+    const errors = Array.from(modal.querySelectorAll('.artdeco-inline-feedback--error, .fb-dash-form-element--error')).filter(isVisible);
+    if (errors.length > 0) {
+      const errText = errors[0].innerText.trim();
+      return { hasIncomplete: true, label: 'Form Validation Error', reason: errText };
+    }
+
+    // 2. Check required text inputs & textareas
+    const requiredInputs = Array.from(modal.querySelectorAll('input[required], input[aria-required="true"], textarea[required], textarea[aria-required="true"]')).filter(isVisible);
+    for (const input of requiredInputs) {
+      if (input.type === 'radio' || input.type === 'checkbox') continue;
+      if (!input.value || !input.value.trim()) {
+        const label = getFieldLabel(input);
+        return { hasIncomplete: true, label, reason: `Required text field "${label}" is empty` };
+      }
+    }
+
+    // 3. Check required radio groups
+    const radioGroups = new Map();
+    const requiredRadios = Array.from(modal.querySelectorAll('input[type="radio"][required], input[type="radio"][aria-required="true"]')).filter(isVisible);
+    for (const radio of requiredRadios) {
+      const name = radio.name || 'group';
+      if (!radioGroups.has(name)) radioGroups.set(name, []);
+      radioGroups.get(name).push(radio);
+    }
+
+    for (const [name, radios] of radioGroups.entries()) {
+      const isAnyChecked = radios.some(r => r.checked);
+      if (!isAnyChecked) {
+        const label = getFieldLabel(radios[0]);
+        return { hasIncomplete: true, label, reason: `Required question "${label}" has no radio selected` };
+      }
+    }
+
+    return { hasIncomplete: false };
+  }
+
+  // D. Navigation Button Detector (Next / Review vs Final Submit)
+  function detectNavigationButton(modal) {
+    if (!modal || !modal.isConnected) return null;
+
+    const buttons = Array.from(modal.querySelectorAll('button')).filter(isVisible);
+
+    // 1. FIRST: Check for Final Submit Button -> MUST BE BLOCKED
+    for (const btn of buttons) {
+      const aria = normalizeText(btn.getAttribute('aria-label') || '');
+      const text = normalizeText(btn.innerText || '');
+      if (
+        aria.includes('submit application') ||
+        text === 'submit application' ||
+        text === 'submit' ||
+        text === 'send application' ||
+        btn.getAttribute('data-easy-apply-submit-button') !== null
+      ) {
+        return { type: 'SUBMIT', button: btn, label: text || aria };
+      }
+    }
+
+    // 2. Check for Review Button (Advances to Review Page)
+    for (const btn of buttons) {
+      const aria = normalizeText(btn.getAttribute('aria-label') || '');
+      const text = normalizeText(btn.innerText || '');
+      if (aria.includes('review your application') || aria.includes('review') || text === 'review' || text === 'review your application') {
+        return { type: 'REVIEW', button: btn, label: text || aria };
+      }
+    }
+
+    // 3. Check for Next / Continue Button
+    for (const btn of buttons) {
+      const aria = normalizeText(btn.getAttribute('aria-label') || '');
+      const text = normalizeText(btn.innerText || '');
+      if (
+        aria.includes('continue to next step') ||
+        aria.includes('next') ||
+        text === 'next' ||
+        text === 'continue' ||
+        btn.getAttribute('data-easy-apply-next-button') !== null
+      ) {
+        return { type: 'NEXT', button: btn, label: text || aria };
+      }
+    }
+
+    return null;
+  }
+
+  // E. Fill Single Step Visible Fields
+  async function fillVisibleStepFields(activeContainer, profile) {
+    const elements = Array.from(activeContainer.querySelectorAll('input, textarea, select, [role="combobox"]')).filter(isVisible);
+    window.__telehire_diagnostics.fieldsDetected += elements.length;
+
+    let filledCount = 0;
+    const handledRadios = new Set();
+
+    for (const el of elements) {
+      if (!el.isConnected || el.disabled || el.readOnly) continue;
+
+      const type = (el.type || el.getAttribute('role') || el.tagName).toLowerCase();
+      const labelText = getFieldLabel(el);
+      const signature = `${type}_${el.name || el.id || labelText}`;
+
+      if (filledSignatures.has(signature) && el.value) {
+        continue;
+      }
+
+      // 1. Radio Button Handling
+      if (type === 'radio') {
+        const groupName = el.name || signature;
+        if (handledRadios.has(groupName)) continue;
+        handledRadios.add(groupName);
+
+        const groupRadios = Array.from(activeContainer.querySelectorAll(`input[type="radio"][name="${CSS.escape(el.name)}"]`)).filter(isVisible);
+        const success = await fillRadioGroup(groupRadios.length > 0 ? groupRadios : [el], labelText, profile);
+        if (success) {
+          filledCount++;
+          filledSignatures.add(signature);
+          logDiag('success', labelText, { type: 'radio', value: 'Selected' });
+        } else {
+          logDiag('skipped', labelText, { type: 'radio', reason: 'No trusted radio option matched' });
+        }
+        continue;
+      }
+
+      // 2. Checkbox Handling
+      if (type === 'checkbox') {
+        const success = await fillCheckbox(el, labelText);
+        if (success) {
+          filledCount++;
+          filledSignatures.add(signature);
+          logDiag('success', labelText, { type: 'checkbox', value: el.checked });
+        } else {
+          logDiag('skipped', labelText, { type: 'checkbox', reason: 'Non-mandatory checkbox' });
+        }
+        continue;
+      }
+
+      // 3. Native Select Handling
+      if (el.tagName.toLowerCase() === 'select') {
+        const success = await fillSelectField(el, labelText, profile);
+        if (success) {
+          filledCount++;
+          filledSignatures.add(signature);
+          logDiag('success', labelText, { type: 'select', value: el.value });
+        } else {
+          logDiag('skipped', labelText, { type: 'select', reason: 'No matching option found' });
+        }
+        continue;
+      }
+
+      // 4. Custom Combobox / ARIA Typeahead
+      if (el.getAttribute('role') === 'combobox' || el.getAttribute('aria-autocomplete') === 'list') {
+        const success = await fillComboboxField(el, labelText, profile);
+        if (success) {
+          filledCount++;
+          filledSignatures.add(signature);
+          logDiag('success', labelText, { type: 'combobox', value: el.value });
+        } else {
+          logDiag('failed', labelText, { type: 'combobox', reason: 'Combobox option verification failed' });
+        }
+        continue;
+      }
+
+      // 5. Standard Text / Email / Phone / Textarea
+      const mapping = mapFieldToProfile(labelText, el, profile);
+      if (!mapping || !mapping.value) {
+        logDiag('skipped', labelText, { type: 'text', reason: 'No trusted profile value' });
+        continue;
+      }
+
+      let verified = false;
+      for (let attempt = 1; attempt <= 2; attempt++) {
+        await humanType(el, mapping.value);
+        verified = verifyField(el, mapping.value, 'text');
+        if (verified) break;
+        await new Promise(r => setTimeout(r, 80));
+      }
+
+      if (verified) {
+        filledCount++;
+        filledSignatures.add(signature);
+        logDiag('success', labelText, { type: 'text', mapped: mapping.key, value: mapping.value });
+      } else {
+        logDiag('failed', labelText, { type: 'text', mapped: mapping.key, reason: 'Value did not persist in DOM' });
+      }
+
+      const fieldDelay = Math.floor(Math.random() * (220 - 100 + 1)) + 100;
+      await new Promise(r => setTimeout(r, fieldDelay));
+    }
+
+    return filledCount;
+  }
+
+  // F. Complete Multi-Step Orchestration Loop (LinkedIn Easy Apply)
+  async function orchestrateEasyApplyFlow(modal, profile) {
+    if (isOrchestrating) return { totalFilled: 0, status: 'BUSY' };
+    isOrchestrating = true;
+
+    window.__telehire_diagnostics.easyApply = true;
+    window.__telehire_diagnostics.status = 'ORCHESTRATING';
+
+    let totalFilled = 0;
+    let stepNumber = 1;
+    const maxSteps = 8;
+    let lastStepSig = '';
+
+    while (stepNumber <= maxSteps) {
+      if (!modal || !modal.isConnected) break;
+
+      const stepInfo = detectEasyApplyStep(modal);
+      window.__telehire_diagnostics.currentStep = stepInfo.stage;
+      window.__telehire_diagnostics.stepIndex = stepNumber;
+      console.log(`%c[TeleHire Orchestrator] Step ${stepNumber}: ${stepInfo.stage} (${stepInfo.title})`, 'color: #10b981; font-weight: bold;');
+
+      // 1. SAFETY STOP: If reached Review or Final Submit state -> STOP IMMEDIATELY
+      if (stepInfo.isReview || stepInfo.stage === 'REVIEW') {
+        window.__telehire_diagnostics.status = 'READY_FOR_MANUAL_SUBMIT';
+        console.log('%c[TeleHire Safety Gate] Review step reached! Stopping automation for manual candidate submission.', 'color: #f59e0b; font-weight: bold;');
+        break;
+      }
+
+      // 2. Handle Resume Step (Select existing resume if available)
+      if (stepInfo.stage === 'RESUME') {
+        const resumeRadios = Array.from(modal.querySelectorAll('.jobs-document-upload__file-selection input[type="radio"], input[type="radio"][value*="resume"]')).filter(isVisible);
+        if (resumeRadios.length > 0 && !resumeRadios.some(r => r.checked)) {
+          resumeRadios[0].click();
+          resumeRadios[0].checked = true;
+          resumeRadios[0].dispatchEvent(new Event('change', { bubbles: true }));
+          totalFilled++;
+          await new Promise(r => setTimeout(r, 100));
+        }
+      }
+
+      // 3. Fill all fields visible on the current step
+      const stepFilled = await fillVisibleStepFields(modal, profile);
+      totalFilled += stepFilled;
+
+      // 4. Verify no unresolved required fields exist before proceeding
+      const reqCheck = checkRequiredFieldsIncomplete(modal);
+      if (reqCheck.hasIncomplete) {
+        window.__telehire_diagnostics.status = 'MANUAL_REQUIRED';
+        window.__telehire_diagnostics.reason = reqCheck.reason;
+        console.warn(`[TeleHire Orchestrator] ${reqCheck.reason}. Halting automation for candidate manual input.`);
+        showNotification(`⚠️ ${reqCheck.reason}. Please answer manually to continue.`, 'warning');
+        break;
+      }
+
+      // 5. Detect Navigation Button (Next / Review vs Submit)
+      const nav = detectNavigationButton(modal);
+      if (!nav) {
+        console.log('[TeleHire Orchestrator] No navigation button found. Step complete.');
+        break;
+      }
+
+      // 6. MANDATORY SAFETY RULE: If button is Final Submit -> STOP
+      if (nav.type === 'SUBMIT') {
+        window.__telehire_diagnostics.status = 'READY_FOR_MANUAL_SUBMIT';
+        console.log('%c[TeleHire Safety Gate] Final Submit button detected. Automation stopped.', 'color: #f59e0b; font-weight: bold;');
+        break;
+      }
+
+      // 7. Advance Step (Next or Review)
+      if (nav.type === 'NEXT' || nav.type === 'REVIEW') {
+        lastStepSig = stepInfo.signature;
+        window.__telehire_diagnostics.navigation.attempted = true;
+        window.__telehire_diagnostics.navigation.lastAction = nav.type;
+
+        console.log(`[TeleHire Orchestrator] Clicking "${nav.label}" to advance step...`);
+        nav.button.focus();
+        nav.button.click();
+
+        // 8. Await DOM Transition with Bounded Timeout (up to 2000ms)
+        let transitioned = false;
+        const startWait = Date.now();
+        while (Date.now() - startWait < 2000) {
+          await new Promise(r => setTimeout(r, 250));
+          const currentModal = detectEasyApplyModal().modal;
+          if (!currentModal || !currentModal.isConnected) break;
+
+          const newStep = detectEasyApplyStep(currentModal);
+          if (newStep.signature !== lastStepSig) {
+            transitioned = true;
+            modal = currentModal;
+            break;
+          }
+        }
+
+        window.__telehire_diagnostics.navigation.successful = transitioned;
+        stepNumber++;
+        await new Promise(r => setTimeout(r, 300));
+      }
+    }
+
+    isOrchestrating = false;
+    return { totalFilled, status: window.__telehire_diagnostics.status };
+  }
+
+  // G. Master Safe Form Filling Entry Point
   async function fillFormSafely() {
     if (isFilling) return;
     isFilling = true;
@@ -449,14 +815,20 @@
     window.__telehire_diagnostics = {
       platform: window.location.hostname.replace('www.', ''),
       timestamp: new Date().toISOString(),
+      easyApply: false,
+      currentStep: 'START',
+      stepIndex: 0,
       fieldsDetected: 0,
       fieldsFilled: 0,
       fieldsSkipped: 0,
       fieldsFailed: 0,
+      navigation: { attempted: false, successful: false, lastAction: null },
+      status: 'FILLING',
+      reason: null,
       fields: [],
     };
 
-    // A. Check Email & License in Storage
+    // A. Check Credentials in Storage
     const storage = await new Promise(r => chrome.storage.local.get(['userEmail', 'userLicense'], r));
     const email = storage.userEmail;
     const license = storage.userLicense || '';
@@ -492,125 +864,31 @@
     }
 
     const p = profRes.profile;
-    showNotification('⚡ Filling form with verified candidate profile...', 'info');
+    showNotification('⚡ TeleHire Safe Form Filler active...', 'info');
 
-    // E. Detect Active Form Container (Modal or Page Form)
-    const activeContainer = document.querySelector('.jobs-easy-apply-modal, [data-easy-apply-modal], form, .application-form, [role="dialog"]') || document.body;
+    // E. Detect LinkedIn Easy Apply Modal vs Regular Page Form
+    const easyApply = detectEasyApplyModal();
+    let totalFilled = 0;
 
-    // Scan all visible interactive elements
-    const elements = Array.from(activeContainer.querySelectorAll('input, textarea, select, [role="combobox"]')).filter(isVisible);
-    window.__telehire_diagnostics.fieldsDetected = elements.length;
-
-    let filledCount = 0;
-    const handledRadios = new Set();
-
-    for (const el of elements) {
-      if (!el.isConnected || el.disabled || el.readOnly) continue;
-
-      const type = (el.type || el.getAttribute('role') || el.tagName).toLowerCase();
-      const labelText = getFieldLabel(el);
-      const signature = `${type}_${el.name || el.id || labelText}`;
-
-      // Duplicate fill protection: skip if already successfully populated
-      if (filledSignatures.has(signature) && el.value) {
-        continue;
-      }
-
-      // 1. Radio Button Handling
-      if (type === 'radio') {
-        const groupName = el.name || signature;
-        if (handledRadios.has(groupName)) continue;
-        handledRadios.add(groupName);
-
-        const groupRadios = Array.from(activeContainer.querySelectorAll(`input[type="radio"][name="${CSS.escape(el.name)}"]`)).filter(isVisible);
-        const success = await fillRadioGroup(groupRadios.length > 0 ? groupRadios : [el], labelText, p);
-        if (success) {
-          filledCount++;
-          filledSignatures.add(signature);
-          logDiag('success', labelText, { type: 'radio', value: 'Selected' });
-        } else {
-          logDiag('skipped', labelText, { type: 'radio', reason: 'No trusted radio option matched' });
-        }
-        continue;
-      }
-
-      // 2. Checkbox Handling
-      if (type === 'checkbox') {
-        const success = await fillCheckbox(el, labelText);
-        if (success) {
-          filledCount++;
-          filledSignatures.add(signature);
-          logDiag('success', labelText, { type: 'checkbox', value: el.checked });
-        } else {
-          logDiag('skipped', labelText, { type: 'checkbox', reason: 'Non-mandatory / optional checkbox' });
-        }
-        continue;
-      }
-
-      // 3. Native Select Handling
-      if (el.tagName.toLowerCase() === 'select') {
-        const success = await fillSelectField(el, labelText, p);
-        if (success) {
-          filledCount++;
-          filledSignatures.add(signature);
-          logDiag('success', labelText, { type: 'select', value: el.value });
-        } else {
-          logDiag('skipped', labelText, { type: 'select', reason: 'No matching option found' });
-        }
-        continue;
-      }
-
-      // 4. Custom Combobox / ARIA Typeahead
-      if (el.getAttribute('role') === 'combobox' || el.getAttribute('aria-autocomplete') === 'list') {
-        const success = await fillComboboxField(el, labelText, p);
-        if (success) {
-          filledCount++;
-          filledSignatures.add(signature);
-          logDiag('success', labelText, { type: 'combobox', value: el.value });
-        } else {
-          logDiag('failed', labelText, { type: 'combobox', reason: 'Combobox option verification failed' });
-        }
-        continue;
-      }
-
-      // 5. Standard Text / Email / Phone / Textarea
-      const mapping = mapFieldToProfile(labelText, el, p);
-      if (!mapping || !mapping.value) {
-        logDiag('skipped', labelText, { type: 'text', reason: 'No profile value available' });
-        continue;
-      }
-
-      // Smart Retry (Max 2 Attempts)
-      let verified = false;
-      for (let attempt = 1; attempt <= 2; attempt++) {
-        await humanType(el, mapping.value);
-        verified = verifyField(el, mapping.value, 'text');
-        if (verified) break;
-        await new Promise(r => setTimeout(r, 100));
-      }
-
-      if (verified) {
-        filledCount++;
-        filledSignatures.add(signature);
-        logDiag('success', labelText, { type: 'text', mapped: mapping.key, value: mapping.value });
-      } else {
-        logDiag('failed', labelText, { type: 'text', mapped: mapping.key, reason: 'Value did not persist in DOM' });
-      }
-
-      // Human delay between fields (150-300ms)
-      const fieldDelay = Math.floor(Math.random() * (300 - 150 + 1)) + 150;
-      await new Promise(r => setTimeout(r, fieldDelay));
+    if (easyApply.isEasyApply && easyApply.modal) {
+      // Run Multi-Step Easy Apply Orchestrator
+      const orchResult = await orchestrateEasyApplyFlow(easyApply.modal, p);
+      totalFilled = orchResult.totalFilled;
+    } else {
+      // Standard Page Form Fill (Workable, Greenhouse, Lever, Naukri, Indeed)
+      const container = document.querySelector('form, .application-form, [role="dialog"]') || document.body;
+      totalFilled = await fillVisibleStepFields(container, p);
     }
 
-    // F. Update Diagnostics Summary
-    window.__telehire_diagnostics.fieldsFilled = filledCount;
+    // F. Final Diagnostics Accounting
+    window.__telehire_diagnostics.fieldsFilled = totalFilled;
     window.__telehire_diagnostics.fieldsFailed = window.__telehire_diagnostics.fields.filter(f => f.type === 'failed').length;
     window.__telehire_diagnostics.fieldsSkipped = window.__telehire_diagnostics.fields.filter(f => f.type === 'skipped').length;
 
-    console.log('[TeleHire Autofill Completed]', window.__telehire_diagnostics);
+    console.log('[TeleHire Flow Completed]', window.__telehire_diagnostics);
 
-    // G. Deduct Quota via Background (Only if fields were actually filled)
-    if (filledCount > 0) {
+    // G. Quota Deduction (Single deduction per completed application flow)
+    if (totalFilled > 0) {
       const useRes = await chrome.runtime.sendMessage({
         type: 'USE_QUOTA',
         payload: {
@@ -625,9 +903,9 @@
 
       const newDaily = useRes.todayCount || (usage.count + 1);
       const newQuota = useRes.quotaLeft !== undefined ? useRes.quotaLeft : (subCheck.quotaLeft - 1);
-      showSuccessModal(filledCount, newDaily, newQuota);
+      showSuccessModal(totalFilled, newDaily, newQuota);
     } else {
-      showNotification('ℹ️ No unfilled supported fields detected on the current step.', 'info');
+      showNotification('ℹ️ No unfilled supported fields detected on this application step.', 'info');
     }
 
     isFilling = false;
@@ -688,10 +966,12 @@
     }, 6000);
   }
 
-  // 14. Success & Manual Submit Reminder Modal
+  // 14. Success & Manual Submit Reminder Modal (Safety Gate)
   function showSuccessModal(filledCount, todayCount, quotaLeft) {
     let modal = document.getElementById('whatshire-modal');
     if (modal) modal.remove();
+
+    const isReview = window.__telehire_diagnostics.status === 'READY_FOR_MANUAL_SUBMIT';
 
     modal = document.createElement('div');
     modal.id = 'whatshire-modal';
@@ -700,19 +980,20 @@
         <div class="wh-modal-card">
           <div class="wh-modal-header">
             <span class="wh-icon-check">✅</span>
-            <h3>Form Step Filled Safely!</h3>
+            <h3>${isReview ? 'Application Ready for Review!' : 'Form Filled Safely!'}</h3>
           </div>
           <p class="wh-modal-body">
-            <strong>${filledCount} fields</strong> filled with React-compatible typing & verification.<br><br>
-            ⚠️ <strong>Safety Rule:</strong> Please manually review all fields, check your resume file, and click <em>Next / Submit</em> yourself.<br><br>
-            <span class="wh-badge-safety">🛡️ Manual Submit protects your account (&lt;1% ban risk)</span>
+            <strong>${filledCount} fields</strong> filled & verified across application steps.<br><br>
+            ${isReview ? '🎯 <strong>Review Step Reached:</strong> All steps filled safely.<br><br>' : ''}
+            ⚠️ <strong>Safety Rule:</strong> Please manually review all answers, check your resume file, and click <em>Submit Application</em> yourself.<br><br>
+            <span class="wh-badge-safety">🛡️ Manual Submit protects your account (<1% ban risk)</span>
           </p>
           <div class="wh-modal-footer">
             <div class="wh-modal-stats">
               <span>Today: <strong>${todayCount} / 40</strong> fills</span>
               <span>Quota left: <strong>${quotaLeft}</strong></span>
             </div>
-            <button id="wh-modal-ok" class="wh-btn-primary">Got it, I will review & continue</button>
+            <button id="wh-modal-ok" class="wh-btn-primary">I will review & submit</button>
           </div>
         </div>
       </div>
@@ -725,7 +1006,7 @@
     });
   }
 
-  // Listen for manual trigger from popup
+  // Message listener from popup
   chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     if (msg.type === 'TRIGGER_FILL') {
       fillFormSafely().then(() => sendResponse({ success: true, diagnostics: window.__telehire_diagnostics }));
@@ -742,7 +1023,7 @@
     }
   }, 3000);
 
-  // Debounced MutationObserver (600ms)
+  // Debounced MutationObserver
   let mutationTimeout = null;
   const observer = new MutationObserver(() => {
     if (mutationTimeout) clearTimeout(mutationTimeout);

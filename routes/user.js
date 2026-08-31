@@ -221,9 +221,18 @@ async function dailyCountHandler(req, res) {
 async function getProfileHandler(req, res) {
   res.header('Access-Control-Allow-Origin', '*');
   try {
-    const email = (req.query.email || '').trim().toLowerCase();
+    const email = (req.query.email || req.body?.email || '').trim().toLowerCase();
+    const license = (req.query.license || req.body?.license || req.headers['x-license-key'] || '').trim().toUpperCase();
+
+    if (!email) return res.status(400).json({ success: false, error: 'Email required' });
+
     const user = await User.findOne({ email });
     if (!user) return res.status(404).json({ success: false, error: 'User not found' });
+
+    // Optional license check for added security
+    if (license && user.extension_license_key && user.extension_license_key !== license && !user.is_paid) {
+      return res.status(401).json({ success: false, error: 'Invalid license key for this account.' });
+    }
 
     const fullName = (user.name || '').trim();
     const parts = fullName.split(/\s+/);
