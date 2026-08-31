@@ -1,5 +1,5 @@
 /**
- * TeleHire Safe Filler - Background Service Worker (Phase 6.1 Fixed)
+ * TeleHire Safe Filler - Background Service Worker (Phase 6B Repaired)
  * Enforces Paid Subscription, Quota Decrement, and Daily Safety Limits
  */
 
@@ -25,7 +25,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 
   if (request.type === 'GET_PROFILE') {
-    handleGetProfile(request.email).then(sendResponse);
+    handleGetProfile(request.email, request.license).then(sendResponse);
     return true;
   }
 
@@ -69,7 +69,6 @@ async function handleCheckSubscription(email, license = '') {
     try {
       data = await fetchWithRetry(targetUrl, { method: 'GET', headers: { 'Content-Type': 'application/json' } });
     } catch (primaryErr) {
-      // If primary failed and was not localhost, try local fallback
       if (!backend.includes('localhost') && !backend.includes('127.0.0.1')) {
         const fallbackUrl = `${LOCAL_BACKEND_URL}/api/extension/verify?email=${encodeURIComponent(cleanEmail)}&license=${encodeURIComponent(cleanLicense)}`;
         try {
@@ -108,11 +107,32 @@ async function handleCheckSubscription(email, license = '') {
   }
 }
 
-async function handleGetProfile(email) {
+async function handleGetProfile(email, license = '') {
   try {
     const backend = await getBackendUrl();
-    const targetUrl = `${backend}/api/user/getProfile?email=${encodeURIComponent(email.trim().toLowerCase())}`;
-    return await fetchWithRetry(targetUrl);
+    let cleanLicense = license;
+    if (!cleanLicense) {
+      const storage = await new Promise(r => chrome.storage.local.get(['userLicense'], r));
+      cleanLicense = storage.userLicense || '';
+    }
+
+    const cleanEmail = (email || '').trim().toLowerCase();
+    const cleanLic = (cleanLicense || '').trim().toUpperCase();
+    const targetUrl = `${backend}/api/user/getProfile?email=${encodeURIComponent(cleanEmail)}&license=${encodeURIComponent(cleanLic)}`;
+    
+    let res;
+    try {
+      res = await fetchWithRetry(targetUrl);
+    } catch (err) {
+      if (!backend.includes('localhost') && !backend.includes('127.0.0.1')) {
+        const fallbackUrl = `${LOCAL_BACKEND_URL}/api/user/getProfile?email=${encodeURIComponent(cleanEmail)}&license=${encodeURIComponent(cleanLic)}`;
+        res = await fetchWithRetry(fallbackUrl);
+      } else {
+        throw err;
+      }
+    }
+
+    return res;
   } catch (err) {
     return { success: false, error: err.message };
   }
@@ -122,11 +142,26 @@ async function handleUseQuota(payload) {
   try {
     const backend = await getBackendUrl();
     const targetUrl = `${backend}/api/user/useQuota`;
-    const data = await fetchWithRetry(targetUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
+    
+    let data;
+    try {
+      data = await fetchWithRetry(targetUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+    } catch (err) {
+      if (!backend.includes('localhost') && !backend.includes('127.0.0.1')) {
+        const fallbackUrl = `${LOCAL_BACKEND_URL}/api/user/useQuota`;
+        data = await fetchWithRetry(fallbackUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+      } else {
+        throw err;
+      }
+    }
 
     const todayKey = getTodayKey();
     const usage = await getDailyUsage();
@@ -134,7 +169,7 @@ async function handleUseQuota(payload) {
 
     chrome.storage.local.set({
       [`fills_${todayKey}`]: newCount,
-      quotaLeft: data.quotaLeft,
+      quotaLeft: data?.quotaLeft,
     });
 
     return { ...data, todayCount: newCount };
@@ -148,9 +183,9 @@ async function getDailyUsage() {
     const todayKey = getTodayKey();
     chrome.storage.local.get([`fills_${todayKey}`], (data) => {
       resolve({
-        date: todayKey,
         count: data[`fills_${todayKey}`] || 0,
         limit: 40,
+        date: todayKey,
       });
     });
   });

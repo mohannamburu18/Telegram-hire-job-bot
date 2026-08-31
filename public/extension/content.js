@@ -1,6 +1,6 @@
 /**
- * TeleHire Safe Job Form Filler - Complete Engine & Multi-Step Orchestrator (Phase 3)
- * 99% Safe · React Native Setters · Multi-Step LinkedIn Easy Apply · Safety Review Gate
+ * TeleHire Safe Job Form Filler - Complete Engine & Multi-Step Orchestrator (Phase 6B Repaired)
+ * Safe Autofill Engine · React Native Setters · Bounded Combobox Polling · Parent Question Traverser · Safety Review Gate
  */
 
 (function () {
@@ -59,7 +59,7 @@
     return rect.width > 0 && rect.height > 0;
   }
 
-  // 2. React Native Value Setter
+  // 2. React Native Value Setter (Bypasses React _valueTracker bug)
   function setNativeValue(element, value) {
     if (!element || !element.isConnected) return;
     try {
@@ -89,19 +89,19 @@
     }
   }
 
-  // 3. Human-Like Keystroke Simulator
+  // 3. Human-Like Keystroke Simulator with React State Verification
   async function humanType(element, text) {
     if (!element || !element.isConnected || text === undefined || text === null) return false;
     element.focus();
     setNativeValue(element, '');
-    await new Promise(r => setTimeout(r, 30));
+    await new Promise(r => setTimeout(r, 25));
 
     let accumulated = '';
     const str = String(text);
     for (let i = 0; i < str.length; i++) {
       const char = str[i];
       accumulated += char;
-      const keyDelay = Math.floor(Math.random() * (45 - 20 + 1)) + 20;
+      const keyDelay = Math.floor(Math.random() * (40 - 15 + 1)) + 15;
 
       element.dispatchEvent(new KeyboardEvent('keydown', { key: char, bubbles: true, composed: true }));
       setNativeValue(element, accumulated);
@@ -111,49 +111,81 @@
     }
 
     element.dispatchEvent(new Event('change', { bubbles: true, composed: true }));
-    element.blur();
+    element.dispatchEvent(new Event('blur', { bubbles: true, composed: true }));
+    await new Promise(r => setTimeout(r, 60));
     return true;
   }
 
-  // 4. Safe Label Extractor
+  // 4. Robust Field Label & Question Extractor (Traverses Ancestor Hierarchy up to 4 levels)
   function getFieldLabel(el) {
     if (!el) return '';
-    let labelText = '';
+    let collectedText = '';
 
-    const labelledby = el.getAttribute('aria-labelledby');
-    if (labelledby) {
-      const labelEl = document.getElementById(labelledby);
-      if (labelEl && labelEl.innerText.trim()) labelText += ' ' + labelEl.innerText.trim();
-    }
-
-    if (el.id) {
-      const labelFor = document.querySelector(`label[for="${CSS.escape(el.id)}"]`);
-      if (labelFor && labelFor.innerText.trim()) labelText += ' ' + labelFor.innerText.trim();
-    }
-
-    const wrappingLabel = el.closest('label');
-    if (wrappingLabel && wrappingLabel.innerText.trim()) {
-      labelText += ' ' + wrappingLabel.innerText.trim();
-    }
-
-    const container = el.closest('.fb-dash-form-element, .jobs-easy-apply-form-section, fieldset, .form-group, .t-14, .artdeco-text-input--container');
-    if (container) {
-      const legend = container.querySelector('legend, label, .fb-dash-form-element__label, h3, span[aria-hidden="true"]');
-      if (legend && legend.innerText.trim()) {
-        labelText += ' ' + legend.innerText.trim();
-      }
-    }
-
+    // A. Direct Attributes
     const ariaLabel = el.getAttribute('aria-label') || '';
     const placeholder = el.placeholder || '';
     const name = el.name || '';
     const id = el.id || '';
 
-    const combined = `${labelText} ${ariaLabel} ${placeholder} ${name} ${id}`;
+    // B. aria-labelledby
+    const labelledby = el.getAttribute('aria-labelledby');
+    if (labelledby) {
+      const parts = labelledby.split(/\s+/);
+      for (const pId of parts) {
+        const labelEl = document.getElementById(pId);
+        if (labelEl && labelEl.innerText.trim()) collectedText += ' ' + labelEl.innerText.trim();
+      }
+    }
+
+    // C. Explicit <label for="...">
+    if (id) {
+      const labelFor = document.querySelector(`label[for="${CSS.escape(id)}"]`);
+      if (labelFor && labelFor.innerText.trim()) collectedText += ' ' + labelFor.innerText.trim();
+    }
+
+    // D. Wrapping <label>
+    const wrappingLabel = el.closest('label');
+    if (wrappingLabel && wrappingLabel.innerText.trim()) {
+      collectedText += ' ' + wrappingLabel.innerText.trim();
+    }
+
+    // E. Ancestor Tree Traverser (up to 4 parent levels for LinkedIn containers/fieldsets/headings)
+    let curr = el.parentElement;
+    let depth = 0;
+    while (curr && depth < 4) {
+      // Check fieldset legend
+      if (curr.tagName.toLowerCase() === 'fieldset') {
+        const legend = curr.querySelector('legend');
+        if (legend && legend.innerText.trim()) {
+          collectedText += ' ' + legend.innerText.trim();
+        }
+      }
+
+      // Check headings and semantic label elements
+      const semanticTitles = curr.querySelectorAll('h1, h2, h3, h4, h5, h6, .fb-dash-form-element__label, [data-test-form-element-label], .t-bold, span[aria-hidden="true"]');
+      for (const t of semanticTitles) {
+        if (t.innerText && t.innerText.trim() && !collectedText.includes(t.innerText.trim())) {
+          collectedText += ' ' + t.innerText.trim();
+        }
+      }
+
+      // Preceding label or question text
+      const prev = curr.previousElementSibling;
+      if (prev && (prev.tagName.toLowerCase() === 'label' || prev.classList.contains('fb-dash-form-element__label') || prev.getAttribute('data-test-form-element-label') !== null)) {
+        if (prev.innerText && prev.innerText.trim()) {
+          collectedText += ' ' + prev.innerText.trim();
+        }
+      }
+
+      curr = curr.parentElement;
+      depth++;
+    }
+
+    const combined = `${collectedText} ${ariaLabel} ${placeholder} ${name} ${id}`;
     return normalizeText(combined);
   }
 
-  // 5. Strict Profile Mapper
+  // 5. Strict Profile Mapper (Truthful Candidate Mapping)
   function mapFieldToProfile(labelText, el, profile) {
     const norm = normalizeText(labelText);
     const type = (el.type || '').toLowerCase();
@@ -247,7 +279,7 @@
       return { key: 'relocate', value: 'Yes' };
     }
 
-    // 17. Degree completion / 18+ years of age
+    // 17. General Truthful Answers (18+ age, degree completed, background check)
     if (norm.includes('18 years of age') || norm.includes('completed degree') || norm.includes('background check') || norm.includes('valid driver')) {
       return { key: 'general_yes', value: 'Yes' };
     }
@@ -324,7 +356,7 @@
     return false;
   }
 
-  // 8. Custom Combobox & Typeahead Handler
+  // 8. Robust Combobox / Typeahead Handler (Bounded Polling up to 1400ms)
   async function fillComboboxField(inputEl, labelText, profile) {
     if (!inputEl || !inputEl.isConnected) return false;
     const mapping = mapFieldToProfile(labelText, inputEl, profile);
@@ -332,43 +364,79 @@
 
     const targetText = String(mapping.value);
     await humanType(inputEl, targetText);
-    await new Promise(r => setTimeout(r, 350));
+
+    // Trigger typeahead discovery
+    inputEl.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
+    inputEl.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, composed: true }));
 
     const optionSelectors = [
       '[role="listbox"] [role="option"]',
+      '[role="option"]',
+      'ul[role="listbox"] li',
       '.artdeco-typeahead__result',
       'li.typeahead-result',
       'div[role="option"]',
       '.artdeco-typeahead__results-list li',
     ];
 
+    // Asynchronous Bounded Polling for Dropdown Options (Up to 1400ms)
     let optionElements = [];
-    for (const sel of optionSelectors) {
-      const found = Array.from(document.querySelectorAll(sel)).filter(isVisible);
-      if (found.length > 0) {
-        optionElements = found;
-        break;
+    const startTime = Date.now();
+    while (Date.now() - startTime < 1400) {
+      for (const sel of optionSelectors) {
+        const found = Array.from(document.querySelectorAll(sel)).filter(isVisible);
+        if (found.length > 0) {
+          optionElements = found;
+          break;
+        }
       }
+      if (optionElements.length > 0) break;
+      await new Promise(r => setTimeout(r, 100));
     }
 
     if (optionElements.length > 0) {
       const expectedNorm = normalizeText(targetText);
       let matchedOpt = null;
 
+      // 1. Exact Match
       for (const opt of optionElements) {
         const optNorm = normalizeText(opt.innerText || '');
-        if (optNorm.includes(expectedNorm) || expectedNorm.includes(optNorm)) {
+        if (optNorm === expectedNorm) {
           matchedOpt = opt;
           break;
         }
       }
 
+      // 2. Starts-With Match
+      if (!matchedOpt) {
+        for (const opt of optionElements) {
+          const optNorm = normalizeText(opt.innerText || '');
+          if (optNorm.startsWith(expectedNorm) || expectedNorm.startsWith(optNorm)) {
+            matchedOpt = opt;
+            break;
+          }
+        }
+      }
+
+      // 3. Safe Contains Match
+      if (!matchedOpt) {
+        for (const opt of optionElements) {
+          const optNorm = normalizeText(opt.innerText || '');
+          if (optNorm.includes(expectedNorm)) {
+            matchedOpt = opt;
+            break;
+          }
+        }
+      }
+
       if (!matchedOpt) matchedOpt = optionElements[0];
+
       if (matchedOpt) {
-        matchedOpt.click();
+        matchedOpt.focus?.();
         matchedOpt.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, composed: true }));
+        matchedOpt.click();
         matchedOpt.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, composed: true }));
-        await new Promise(r => setTimeout(r, 100));
+        await new Promise(r => setTimeout(r, 120));
       }
     }
 
@@ -433,7 +501,7 @@
   }
 
   // =========================================================================
-  // LINKEDIN EASY APPLY MULTI-STEP ORCHESTRATION ENGINE (PHASE 3)
+  // LINKEDIN EASY APPLY MULTI-STEP ORCHESTRATION ENGINE (PHASE 6B)
   // =========================================================================
 
   // A. Modal Detector
@@ -462,7 +530,7 @@
       return { stage: 'UNKNOWN', title: '', isReview: false, isSubmit: false, signature: '' };
     }
 
-    const headerEl = modal.querySelector('h2, h3, .jobs-easy-apply-modal__header, .artdeco-modal__header, [data-test-modal-header]');
+    const headerEl = modal.querySelector('h1, h2, h3, .jobs-easy-apply-modal__header, .artdeco-modal__header, [data-test-modal-header]');
     const headerText = headerEl ? headerEl.innerText.trim() : '';
     const normHeader = normalizeText(headerText);
     const fullText = normalizeText(modal.innerText);
@@ -471,7 +539,6 @@
     let isReview = false;
     let isSubmit = false;
 
-    // Check for review / submit indicators
     if (normHeader.includes('review') || fullText.includes('review your application') || modal.querySelector('.jobs-easy-apply-review')) {
       stage = 'REVIEW';
       isReview = true;
@@ -507,41 +574,42 @@
     };
   }
 
-  // C. Required Field Completion Checker (Prevents clicking Next with missing answers)
+  // C. Required Field Completion Checker (Includes Asterisks & Hidden Labels)
   function checkRequiredFieldsIncomplete(modal) {
     if (!modal || !modal.isConnected) return { hasIncomplete: false };
 
     // 1. Check for visible LinkedIn error messages
-    const errors = Array.from(modal.querySelectorAll('.artdeco-inline-feedback--error, .fb-dash-form-element--error')).filter(isVisible);
+    const errors = Array.from(modal.querySelectorAll('.artdeco-inline-feedback--error, .fb-dash-form-element--error, [data-test-form-element-error-message]')).filter(isVisible);
     if (errors.length > 0) {
       const errText = errors[0].innerText.trim();
       return { hasIncomplete: true, label: 'Form Validation Error', reason: errText };
     }
 
-    // 2. Check required text inputs & textareas
-    const requiredInputs = Array.from(modal.querySelectorAll('input[required], input[aria-required="true"], textarea[required], textarea[aria-required="true"]')).filter(isVisible);
-    for (const input of requiredInputs) {
-      if (input.type === 'radio' || input.type === 'checkbox') continue;
-      if (!input.value || !input.value.trim()) {
-        const label = getFieldLabel(input);
-        return { hasIncomplete: true, label, reason: `Required text field "${label}" is empty` };
-      }
-    }
+    // 2. Scan all form element containers for required flags (HTML5, aria, asterisks, visually-hidden)
+    const formContainers = Array.from(modal.querySelectorAll('.fb-dash-form-element, [data-test-form-builder-item], fieldset, .form-group')).filter(isVisible);
+    for (const container of formContainers) {
+      const containerText = container.innerText || '';
+      const isRequired =
+        container.querySelector('[required], [aria-required="true"]') !== null ||
+        containerText.includes('*') ||
+        container.querySelector('.visually-hidden')?.innerText.toLowerCase().includes('required');
 
-    // 3. Check required radio groups
-    const radioGroups = new Map();
-    const requiredRadios = Array.from(modal.querySelectorAll('input[type="radio"][required], input[type="radio"][aria-required="true"]')).filter(isVisible);
-    for (const radio of requiredRadios) {
-      const name = radio.name || 'group';
-      if (!radioGroups.has(name)) radioGroups.set(name, []);
-      radioGroups.get(name).push(radio);
-    }
+      if (isRequired) {
+        // Check text inputs & textareas
+        const inputs = Array.from(container.querySelectorAll('input:not([type="radio"]):not([type="checkbox"]):not([type="hidden"]), textarea, select')).filter(isVisible);
+        for (const input of inputs) {
+          if (!input.value || !input.value.trim()) {
+            const label = getFieldLabel(input);
+            return { hasIncomplete: true, label, reason: `Required field "${label}" is empty` };
+          }
+        }
 
-    for (const [name, radios] of radioGroups.entries()) {
-      const isAnyChecked = radios.some(r => r.checked);
-      if (!isAnyChecked) {
-        const label = getFieldLabel(radios[0]);
-        return { hasIncomplete: true, label, reason: `Required question "${label}" has no radio selected` };
+        // Check radio groups
+        const radios = Array.from(container.querySelectorAll('input[type="radio"]')).filter(isVisible);
+        if (radios.length > 0 && !radios.some(r => r.checked)) {
+          const label = getFieldLabel(radios[0]);
+          return { hasIncomplete: true, label, reason: `Required question "${label}" has no radio selected` };
+        }
       }
     }
 
@@ -695,7 +763,7 @@
         logDiag('failed', labelText, { type: 'text', mapped: mapping.key, reason: 'Value did not persist in DOM' });
       }
 
-      const fieldDelay = Math.floor(Math.random() * (220 - 100 + 1)) + 100;
+      const fieldDelay = Math.floor(Math.random() * (180 - 80 + 1)) + 80;
       await new Promise(r => setTimeout(r, fieldDelay));
     }
 
@@ -730,19 +798,30 @@
         break;
       }
 
-      // 2. Handle Resume Step (Select existing resume if available)
+      // 2. Handle Resume Step (Select existing candidate resume if available)
       if (stepInfo.stage === 'RESUME') {
         const resumeRadios = Array.from(modal.querySelectorAll('.jobs-document-upload__file-selection input[type="radio"], input[type="radio"][value*="resume"]')).filter(isVisible);
-        if (resumeRadios.length > 0 && !resumeRadios.some(r => r.checked)) {
-          resumeRadios[0].click();
-          resumeRadios[0].checked = true;
-          resumeRadios[0].dispatchEvent(new Event('change', { bubbles: true }));
-          totalFilled++;
-          await new Promise(r => setTimeout(r, 100));
+        if (resumeRadios.length > 0) {
+          if (!resumeRadios.some(r => r.checked)) {
+            resumeRadios[0].click();
+            resumeRadios[0].checked = true;
+            resumeRadios[0].dispatchEvent(new Event('change', { bubbles: true }));
+            totalFilled++;
+            await new Promise(r => setTimeout(r, 100));
+          }
+        } else {
+          // If no pre-existing resume radio found and file upload input is empty, request manual resume selection
+          const fileInput = modal.querySelector('input[type="file"]');
+          if (fileInput && (!fileInput.files || fileInput.files.length === 0)) {
+            window.__telehire_diagnostics.status = 'MANUAL_REQUIRED';
+            window.__telehire_diagnostics.reason = 'Please select or upload your resume file.';
+            showNotification('📄 Please select your resume to continue.', 'warning');
+            break;
+          }
         }
       }
 
-      // 3. Fill all fields visible on the current step
+      // 3. Fill all fields visible on current step
       const stepFilled = await fillVisibleStepFields(modal, profile);
       totalFilled += stepFilled;
 
@@ -780,11 +859,11 @@
         nav.button.focus();
         nav.button.click();
 
-        // 8. Await DOM Transition with Bounded Timeout (up to 2000ms)
+        // 8. Bounded Asynchronous Polling for DOM Transition (up to 2500ms)
         let transitioned = false;
         const startWait = Date.now();
-        while (Date.now() - startWait < 2000) {
-          await new Promise(r => setTimeout(r, 250));
+        while (Date.now() - startWait < 2500) {
+          await new Promise(r => setTimeout(r, 150));
           const currentModal = detectEasyApplyModal().modal;
           if (!currentModal || !currentModal.isConnected) break;
 
@@ -798,7 +877,7 @@
 
         window.__telehire_diagnostics.navigation.successful = transitioned;
         stepNumber++;
-        await new Promise(r => setTimeout(r, 300));
+        await new Promise(r => setTimeout(r, 200));
       }
     }
 
@@ -811,7 +890,6 @@
     if (isFilling) return;
     isFilling = true;
 
-    // Reset diagnostics
     window.__telehire_diagnostics = {
       platform: window.location.hostname.replace('www.', ''),
       timestamp: new Date().toISOString(),
@@ -850,13 +928,13 @@
     // C. Check Daily Limit 40
     const usage = await chrome.runtime.sendMessage({ type: 'GET_DAILY_USAGE' });
     if (usage.count >= 40) {
-      showNotification(`⚠️ Daily safety limit reached (${usage.count}/40). Come back tomorrow to protect your account.`, 'warning');
+      showNotification(`⚠️ Daily safety limit reached (${usage.count}/40). Please resume tomorrow to protect your account.`, 'warning');
       isFilling = false;
       return;
     }
 
-    // D. Fetch Profile
-    const profRes = await chrome.runtime.sendMessage({ type: 'GET_PROFILE', email });
+    // D. Fetch Profile (with license authentication)
+    const profRes = await chrome.runtime.sendMessage({ type: 'GET_PROFILE', email, license });
     if (!profRes.success || !profRes.profile) {
       showNotification('❌ Could not load profile details. Please re-sync in extension popup.', 'error');
       isFilling = false;
@@ -871,23 +949,19 @@
     let totalFilled = 0;
 
     if (easyApply.isEasyApply && easyApply.modal) {
-      // Run Multi-Step Easy Apply Orchestrator
       const orchResult = await orchestrateEasyApplyFlow(easyApply.modal, p);
       totalFilled = orchResult.totalFilled;
     } else {
-      // Standard Page Form Fill (Workable, Greenhouse, Lever, Naukri, Indeed)
       const container = document.querySelector('form, .application-form, [role="dialog"]') || document.body;
       totalFilled = await fillVisibleStepFields(container, p);
     }
 
-    // F. Final Diagnostics Accounting
     window.__telehire_diagnostics.fieldsFilled = totalFilled;
     window.__telehire_diagnostics.fieldsFailed = window.__telehire_diagnostics.fields.filter(f => f.type === 'failed').length;
     window.__telehire_diagnostics.fieldsSkipped = window.__telehire_diagnostics.fields.filter(f => f.type === 'skipped').length;
 
     console.log('[TeleHire Flow Completed]', window.__telehire_diagnostics);
 
-    // G. Quota Deduction (Single deduction per completed application flow)
     if (totalFilled > 0) {
       const useRes = await chrome.runtime.sendMessage({
         type: 'USE_QUOTA',
@@ -901,8 +975,8 @@
         },
       });
 
-      const newDaily = useRes.todayCount || (usage.count + 1);
-      const newQuota = useRes.quotaLeft !== undefined ? useRes.quotaLeft : (subCheck.quotaLeft - 1);
+      const newDaily = useRes?.todayCount || (usage.count + 1);
+      const newQuota = useRes?.quotaLeft !== undefined ? useRes.quotaLeft : (subCheck.quotaLeft - 1);
       showSuccessModal(totalFilled, newDaily, newQuota);
     } else {
       showNotification('ℹ️ No unfilled supported fields detected on this application step.', 'info');
@@ -983,10 +1057,10 @@
             <h3>${isReview ? 'Application Ready for Review!' : 'Form Filled Safely!'}</h3>
           </div>
           <p class="wh-modal-body">
-            <strong>${filledCount} fields</strong> filled & verified across application steps.<br><br>
+            <strong>${filledCount} fields</strong> filled with human-paced typing.<br><br>
             ${isReview ? '🎯 <strong>Review Step Reached:</strong> All steps filled safely.<br><br>' : ''}
             ⚠️ <strong>Safety Rule:</strong> Please manually review all answers, check your resume file, and click <em>Submit Application</em> yourself.<br><br>
-            <span class="wh-badge-safety">🛡️ Manual Submit protects your account (<1% ban risk)</span>
+            <span class="wh-badge-safety">🛡️ Human-paced typing · Final submission requires manual candidate review</span>
           </p>
           <div class="wh-modal-footer">
             <div class="wh-modal-stats">

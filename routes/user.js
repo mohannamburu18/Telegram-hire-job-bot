@@ -141,34 +141,61 @@ async function verifyHandler(req, res) {
  */
 async function useQuotaHandler(req, res) {
   res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, x-license-key');
 
   try {
     const email = (req.body.email || '').trim().toLowerCase();
+    const license = (req.body.license || req.headers['x-license-key'] || '').trim().toUpperCase();
     const platform = req.body.platform || 'Extension Form Fill';
     const jobTitle = req.body.jobTitle || 'Job Application';
     const company = req.body.company || 'Direct Employer';
-    const jobUrl = req.body.jobUrl || '';
+    const jobUrl = (req.body.jobUrl || '').trim();
 
     if (!email) return res.status(400).json({ success: false, error: 'Email required' });
 
     const user = await User.findOne({ email });
     if (!user) return res.status(404).json({ success: false, error: 'User not found' });
 
-    const isGod = user.trial_applications_used < -1000;
+    // Validate license key
+    if (license && user.extension_license_key && user.extension_license_key !== license && !user.is_paid) {
+      return res.status(401).json({ success: false, error: 'Invalid license key for this account.' });
+    }
+
+    const isGod = user.trial_applications_used < -1000 || user.plan === 'GOD MODE';
     const planConfig = PLANS[user.plan] || PLANS.free;
     const totalAllowed = isGod ? 999999 : (planConfig.auto + (user.bonus_auto_quota || 0));
 
-    if (!isGod) {
-      user.trial_applications_used = (user.trial_applications_used || 0) + 1;
+    // Duplicate Application Check (within last 24h)
+    if (jobUrl) {
+      const existingApp = await Application.findOne({
+        user_id: user._id,
+        job_url: jobUrl,
+        createdAt: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
+      });
+
+      if (existingApp) {
+        return res.status(200).json({
+          success: true,
+          quotaLeft: isGod ? 999999 : Math.max(0, totalAllowed - (user.trial_applications_used || 0)),
+          todayCount: user.daily_fills_count || 1,
+          applicationId: existingApp.application_id,
+          duplicate: true,
+          message: 'Application already recorded for this job.',
+        });
+      }
     }
 
+    // Atomic update for quota and daily count
     const todayStr = getTodayStr();
     if (user.daily_fills_date !== todayStr) {
       user.daily_fills_date = todayStr;
       user.daily_fills_count = 1;
     } else {
       user.daily_fills_count = (user.daily_fills_count || 0) + 1;
+    }
+
+    if (!isGod) {
+      user.trial_applications_used = (user.trial_applications_used || 0) + 1;
     }
     await user.save();
 
@@ -229,9 +256,12 @@ async function getProfileHandler(req, res) {
     const user = await User.findOne({ email });
     if (!user) return res.status(404).json({ success: false, error: 'User not found' });
 
-    // Optional license check for added security
-    if (license && user.extension_license_key && user.extension_license_key !== license && !user.is_paid) {
+    // Strict license check
+    if (license && user.extension_license_key && user.extension_license_key !== license) {
       return res.status(401).json({ success: false, error: 'Invalid license key for this account.' });
+    }
+    if (!license && !user.is_paid && user.trial_applications_used >= -1000) {
+      return res.status(401).json({ success: false, error: 'License key required.' });
     }
 
     const fullName = (user.name || '').trim();
