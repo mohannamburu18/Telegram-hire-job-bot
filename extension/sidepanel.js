@@ -340,9 +340,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (msg.type === 'QUEUE_TASK_LIVE_UPDATE') {
       renderActiveTask(msg.task);
       appendLog(`[${msg.task.platform}] ${msg.task.status}: ${msg.task.step || ''}`);
+      refreshQueueList();
     }
   });
 
-  // Restore session on load
+  // Restore session on load and start auto-polling queue every 3 seconds
   await restoreSession();
+  setInterval(() => {
+    if (activeSessionUser) {
+      refreshQueueList();
+    }
+  }, 3000);
 });
+

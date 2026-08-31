@@ -189,90 +189,125 @@
   function mapFieldToProfile(labelText, el, profile) {
     const norm = normalizeText(labelText);
     const type = (el.type || '').toLowerCase();
+    const elName = (el.name || '').toLowerCase();
+    const elId = (el.id || '').toLowerCase();
 
-    // First Name
-    if ((norm.includes('first name') || norm.includes('firstname') || norm.includes('given name') || el.name === 'fname' || el.name === 'firstName') && !norm.includes('last name')) {
-      return { key: 'firstName', value: profile.firstName || (profile.name || '').split(' ')[0] };
+    // 1. Middle Name (Specific)
+    if (norm.includes('middle name') || norm.includes('middlename') || elName.includes('middle_name') || elName.includes('mname')) {
+      return { key: 'middleName', value: profile.middleName || 'Krishna' };
     }
 
-    // Last Name
-    if (norm.includes('last name') || norm.includes('lastname') || norm.includes('surname') || norm.includes('family name') || el.name === 'lname' || el.name === 'lastName') {
-      return { key: 'lastName', value: profile.lastName || (profile.name || '').split(' ').slice(1).join(' ') || profile.firstName };
+    // 2. First Name
+    if (
+      (norm.includes('first name') || norm.includes('firstname') || norm.includes('given name') || norm.includes('forename') || elName === 'fname' || elName === 'firstname' || elName === 'first_name') &&
+      !norm.includes('last') && !norm.includes('middle') && !norm.includes('company')
+    ) {
+      return { key: 'firstName', value: profile.firstName || (profile.name || '').split(' ')[0] || 'Mohan' };
     }
 
-    // Full Name
-    if (norm.includes('full name') || (norm.includes('name') && !norm.includes('company') && !norm.includes('first') && !norm.includes('last') && !norm.includes('user') && !norm.includes('file'))) {
-      return { key: 'name', value: profile.name };
+    // 3. Last Name / Surname
+    if (
+      norm.includes('last name') || norm.includes('lastname') || norm.includes('surname') || norm.includes('family name') || elName === 'lname' || elName === 'lastname' || elName === 'last_name'
+    ) {
+      return { key: 'lastName', value: profile.lastName || (profile.name || '').split(' ').slice(1).join(' ') || 'Namburu' };
     }
 
-    // Email
-    if (type === 'email' || norm.includes('email') || norm.includes('e mail')) {
+    // 4. Full Name (Only when specifically candidate full name)
+    const isUnrelatedName = norm.includes('company') || norm.includes('employer') || norm.includes('school') || norm.includes('college') || norm.includes('university') || norm.includes('project') || norm.includes('file') || norm.includes('user') || norm.includes('ref') || norm.includes('manager');
+    if (
+      !isUnrelatedName &&
+      (norm === 'name' || norm === 'full name' || norm === 'fullname' || norm === 'candidate name' || norm === 'applicant name' || norm === 'your name' || norm === 'legal name' || norm === 'candidate full name' || elName === 'fullname' || elName === 'applicant_name' || (elName === 'name' && !elId.includes('company')))
+    ) {
+      return { key: 'name', value: profile.name || 'Mohan Krishna Namburu' };
+    }
+
+    // 5. Email
+    if (type === 'email' || norm === 'email' || norm === 'email address' || norm.includes('email') || norm.includes('e mail')) {
       return { key: 'email', value: profile.email };
     }
 
-    // Phone / Mobile
-    if (type === 'tel' || norm.includes('phone') || norm.includes('mobile') || norm.includes('contact number') || norm.includes('telephone')) {
+    // 6. Phone / Mobile
+    if (type === 'tel' || norm.includes('phone') || norm.includes('mobile') || norm.includes('contact number') || norm.includes('telephone') || norm.includes('cell')) {
       return { key: 'phone', value: profile.phone };
     }
 
-    // City / Location / Address
-    if (norm.includes('city') || norm.includes('current location') || norm.includes('current city') || norm.includes('location') || norm.includes('address') || norm.includes('where are you based')) {
-      return { key: 'location', value: profile.current_location || profile.location || 'Bangalore, India' };
+    // 7. City / Location / Address
+    if (norm.includes('city') && !norm.includes('university')) {
+      return { key: 'city', value: profile.city || 'Bangalore' };
+    }
+    if (norm.includes('state') || norm.includes('province') || norm.includes('region')) {
+      return { key: 'state', value: profile.state || 'Karnataka' };
+    }
+    if (norm.includes('country') && !norm.includes('code')) {
+      return { key: 'country', value: profile.country || 'India' };
+    }
+    if (norm.includes('current location') || norm.includes('current city') || norm.includes('location') || norm.includes('address') || norm.includes('where are you based')) {
+      return { key: 'location', value: profile.current_location || profile.location || 'Bangalore, Karnataka, India' };
     }
 
-    // LinkedIn
+    // 8. LinkedIn URL
     if (norm.includes('linkedin') || norm.includes('linked in')) {
-      return { key: 'linkedin', value: profile.linkedin || 'https://linkedin.com' };
+      return { key: 'linkedin', value: profile.linkedin || 'https://www.linkedin.com' };
     }
 
-    // GitHub / Portfolio / Personal Website
-    if (norm.includes('github') || norm.includes('git hub') || norm.includes('portfolio') || norm.includes('website') || norm.includes('personal url')) {
-      return { key: 'github', value: profile.github || profile.linkedin || '' };
+    // 9. GitHub / Portfolio / Website
+    if (norm.includes('github') || norm.includes('git hub') || norm.includes('portfolio') || norm.includes('website') || norm.includes('personal url') || norm.includes('homepage')) {
+      return { key: 'github', value: profile.github || profile.portfolio || profile.linkedin || 'https://github.com' };
     }
 
-    // Notice Period / Availability
+    // 10. Education / School / College / University
+    if (norm.includes('school') || norm.includes('university') || norm.includes('college') || norm.includes('institution')) {
+      return { key: 'university', value: profile.university || profile.education || 'Bachelor of Technology' };
+    }
+    if (norm.includes('degree') || norm.includes('major') || norm.includes('qualification') || norm.includes('discipline') || norm.includes('field of study')) {
+      return { key: 'degree', value: profile.degree || 'Computer Science & Engineering' };
+    }
+
+    // 11. Work Authorization & Sponsorship
+    if (norm.includes('authorized to work') || norm.includes('legally authorized') || norm.includes('eligible to work') || norm.includes('right to work') || norm.includes('legal right')) {
+      return { key: 'work_authorization', value: profile.work_authorization || 'Yes' };
+    }
+    if (norm.includes('sponsorship') || norm.includes('require visa') || norm.includes('visa sponsorship') || norm.includes('will you require visa') || norm.includes('now or in the future')) {
+      return { key: 'visa_sponsorship', value: profile.visa_sponsorship || 'No' };
+    }
+    if (norm.includes('relocate') || norm.includes('willing to relocate')) {
+      return { key: 'relocate', value: profile.relocation || 'Yes' };
+    }
+
+    // 12. Voluntary Disclosures (Disability, Veteran, Gender)
+    if (norm.includes('disability') || norm.includes('handicap')) {
+      return { key: 'disability', value: 'No' };
+    }
+    if (norm.includes('veteran') || norm.includes('military')) {
+      return { key: 'veteran', value: 'No' };
+    }
+    if (norm.includes('gender') || norm.includes('sex')) {
+      return { key: 'gender', value: 'Male' };
+    }
+
+    // 13. General Confirmations
+    if (norm.includes('18 years of age') || norm.includes('at least 18') || norm.includes('completed degree') || norm.includes('background check') || norm.includes('drug screen')) {
+      return { key: 'general_yes', value: 'Yes' };
+    }
+
+    // 14. Notice Period / Availability
     if (norm.includes('notice') || norm.includes('how soon') || norm.includes('availability') || norm.includes('start date') || norm.includes('joining period')) {
       return { key: 'notice', value: profile.notice_period || 'Immediate / 15 Days' };
     }
 
-    // Expected CTC / Salary
+    // 15. Expected CTC / Salary
     if (norm.includes('expected salary') || norm.includes('expected ctc') || norm.includes('ctc') || norm.includes('salary expectation') || norm.includes('compensation expectation')) {
       return { key: 'salary', value: profile.expected_ctc || profile.expected_salary || 'As per industry standards' };
     }
 
-    // Years of Experience
+    // 16. Years of Experience
     if (norm.includes('years of experience') || norm.includes('total experience') || norm.includes('how many years') || norm.includes('experience in years')) {
       return { key: 'experience', value: `${profile.experience_years || '0-1'}` };
     }
 
-    // Skills / Summary / Cover Letter
+    // 17. Skills / Summary
     if (norm.includes('skills') || norm.includes('technical skills') || norm.includes('summary') || norm.includes('cover letter') || norm.includes('additional information')) {
-      return { key: 'skills', value: profile.skillsString || (profile.skills || []).join(', ') || 'Software Engineering, Web Development' };
-    }
-
-    // Education / University / Degree
-    if (norm.includes('education') || norm.includes('university') || norm.includes('college') || norm.includes('degree') || norm.includes('highest qualification')) {
-      return { key: 'education', value: profile.education || 'Bachelor of Technology' };
-    }
-
-    // Work Authorization (India / Work Rights)
-    if (norm.includes('authorized to work') || norm.includes('legally authorized') || norm.includes('eligible to work') || norm.includes('right to work') || norm.includes('legal right')) {
-      return { key: 'work_authorization', value: 'Yes' };
-    }
-
-    // Visa Sponsorship
-    if (norm.includes('sponsorship') || norm.includes('require visa') || norm.includes('visa sponsorship') || norm.includes('will you require visa')) {
-      return { key: 'visa_sponsorship', value: 'No' };
-    }
-
-    // Relocation
-    if (norm.includes('relocate') || norm.includes('willing to relocate')) {
-      return { key: 'relocate', value: 'Yes' };
-    }
-
-    // General Truthful Confirmations (18+ age, background check)
-    if (norm.includes('18 years of age') || norm.includes('completed degree') || norm.includes('background check') || norm.includes('valid driver')) {
-      return { key: 'general_yes', value: 'Yes' };
+      return { key: 'skills', value: profile.skillsString || (profile.skills || []).join(', ') || 'JavaScript, Node.js, React, Python, Web Development' };
     }
 
     return null;
