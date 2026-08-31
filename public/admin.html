@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>WhatsHire — Executive Admin & God Mode Portal</title>
+  <title>TeleHire — Executive Admin & God Mode Portal</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -359,21 +359,20 @@
   <div id="loginOverlay" style="display: none;">
     <div class="modal-card" style="max-width: 440px; text-align: center;">
       <div style="font-size: 48px; margin-bottom: 12px;">👑</div>
-      <h2 style="font-size: 22px; font-weight: 800; margin-bottom: 8px;">WhatsHire Admin Access</h2>
-      <p style="color: var(--text-muted); font-size: 13.5px; margin-bottom: 24px;">Enter your master admin secret key to proceed to God Mode dashboard.</p>
-      
-      <form id="loginForm">
-        <input type="password" id="secretInput" class="input-search" style="width: 100%; padding: 12px; margin-bottom: 16px; font-size: 14px;" placeholder="Admin Secret Key" required autofocus>
-        <button type="submit" class="btn-action" style="width: 100%; padding: 12px; font-size: 14px; font-weight: 700;">Authenticate & Unlock Dashboard</button>
-      </form>
+      <h2 style="font-size: 22px; font-weight: 800; margin-bottom: 8px;">TeleHire Admin Access</h2>
+      <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 24px;">Enter the master secret to unlock the Executive Dashboard.</p>
+      <input type="password" id="secretInput" placeholder="Master Admin Secret" style="width: 100%; padding: 14px 18px; background: rgba(0,0,0,0.5); border: 1px solid var(--border); border-radius: 12px; color: #fff; font-size: 15px; margin-bottom: 16px;">
+      <button onclick="loginAdmin()" style="width: 100%; padding: 14px; background: var(--accent); color: #fff; border: none; border-radius: 12px; font-weight: 700; font-size: 15px; cursor: pointer;">Unlock Dashboard 🔓</button>
+      <div id="loginError" style="color: var(--danger); font-size: 13px; margin-top: 12px; display: none;">Invalid admin secret. Access denied.</div>
     </div>
   </div>
 
-  <!-- Top Navigation -->
-  <header class="navbar">
-    <div class="brand">
-      ⚡ WhatsHire <span class="badge">👑 Master Admin</span>
-    </div>
+  <div id="dashboardApp" style="display: none;">
+    <!-- Top Bar -->
+    <div class="topbar">
+      <div class="logo">
+        ⚡ TeleHire <span class="badge">👑 Master Admin</span>
+      </div></div>
     <div class="nav-tabs">
       <button class="tab-btn active" onclick="switchTab('dashboardTab')">📊 Dashboard</button>
       <button class="tab-btn" onclick="switchTab('usersTab')">👥 Users & God Mode</button>

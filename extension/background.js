@@ -1,5 +1,5 @@
 /**
- * WhatsHire Safe Filler - Background Service Worker (Phase 5.1 Fixed)
+ * TeleHire Safe Filler - Background Service Worker (Phase 5.1 Fixed)
  * Enforces Paid Subscription, Quota Decrement, and Daily Safety Limits
  */
 
@@ -100,7 +100,7 @@ async function handleCheckSubscription(email, license = '') {
   } catch (err) {
     return {
       allowed: false,
-      reason: `Could not connect to WhatsHire server. Please verify: 1) Server is running, 2) Internet connection is active. (Error: ${err.message})`,
+      reason: `Could not connect to TeleHire server. Please verify: 1) Server is running, 2) Internet connection is active. (Error: ${err.message})`,
     };
   }
 }

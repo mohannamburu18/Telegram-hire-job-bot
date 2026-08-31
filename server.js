@@ -66,8 +66,8 @@ let botInstance = null;
 app.get(['/health', '/api/health'], (req, res) => {
   res.status(200).json({
     status: 'ok',
-    message: 'WhatsHire server running',
-    service: 'WhatsHire Telegram SaaS',
+    message: 'TeleHire server running',
+    service: 'TeleHire Telegram SaaS',
     uptime: process.uptime(),
     timestamp: new Date().toISOString(),
     db_connected: mongoose.connection.readyState === 1,
@@ -422,7 +422,7 @@ async function runPrioritizedAutopilot(priorityFilter = 'all') {
 
         if (botInstance && botInstance.telegram && appliedSummaries.length > 0) {
           let summaryMsg = 
-            `🚀 *WhatsHire Daily Autopilot Summary*\n\n` +
+            `🚀 *TeleHire Daily Autopilot Summary*\n\n` +
             `We automatically submitted *${appliedSummaries.length} fresh applications* for you today matching *${user.role}*:\n\n`;
 
           appliedSummaries.slice(0, 3).forEach((item, idx) => {
@@ -474,7 +474,7 @@ async function startServer() {
   }
 
   app.listen(PORT, () => {
-    console.log(`🚀 WhatsHire Web & API Server running on port ${PORT}`);
+    console.log(`🚀 TeleHire Web & API Server running on port ${PORT}`);
     console.log(`🌐 Base URL: ${process.env.BASE_URL || `http://localhost:${PORT}`}`);
     console.log(`👑 Admin Dashboard: ${process.env.BASE_URL || `http://localhost:${PORT}`}/admin?secret=${process.env.ADMIN_SECRET || 'whatshire_admin_2026_secure'}`);
   });
@@ -486,7 +486,7 @@ async function startServer() {
       botInstance.launch().catch((botErr) => {
         console.error('❌ Failed to launch Telegram Bot:', botErr.message);
       });
-      console.log('🤖 WhatsHire Telegram Bot is live and polling for updates! [@TeleHireJOB_bot]');
+      console.log('🤖 TeleHire Telegram Bot is live and polling for updates! [@TeleHireJOB_bot]');
 
       process.once('SIGINT', () => botInstance.stop('SIGINT'));
       process.once('SIGTERM', () => botInstance.stop('SIGTERM'));

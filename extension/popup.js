@@ -50,7 +50,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     syncBtn.disabled = true;
     syncBtn.innerText = 'Verifying...';
-    syncStatus.innerText = 'Connecting to WhatsHire server...';
+    syncStatus.innerText = 'Connecting to TeleHire server...';
     syncStatus.style.color = '#94a3b8';
 
     await verifySubscription(email, license);

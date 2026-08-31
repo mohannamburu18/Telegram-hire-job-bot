@@ -35,3 +35,4 @@ function buildExtensionZip() {
 module.exports = {
   buildExtensionZip,
 };
+

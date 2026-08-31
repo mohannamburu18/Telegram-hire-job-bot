@@ -1,5 +1,5 @@
 /**
- * WhatsHire Safe Job Form Filler - Content Script
+ * TeleHire Safe Job Form Filler - Content Script
  * 99% Safe · Human-like typing · Manual Submit · Paid Users Only
  */
 
@@ -69,7 +69,7 @@
     const license = storage.userLicense || '';
 
     if (!email) {
-      showNotification('⚠️ Please click the WhatsHire extension icon and enter your Telegram email & license key to sync profile first.', 'warning');
+      showNotification('⚠️ Please click the TeleHire extension icon and enter your Telegram email & license key to sync profile first.', 'warning');
       isFilling = false;
       return;
     }
@@ -171,7 +171,7 @@
     banner.innerHTML = `
       <div class="wh-banner-content">
         <div class="wh-banner-left">
-          <span class="wh-logo-badge">⚡ WhatsHire</span>
+          <span class="wh-logo-badge">⚡ TeleHire</span>
           <span class="wh-banner-text">Safe Form Filler detected. Fill form with your verified profile?</span>
         </div>
         <div class="wh-banner-actions">

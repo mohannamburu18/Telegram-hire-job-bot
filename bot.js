@@ -122,7 +122,7 @@ function createBot() {
         }
 
         const statsMsg = 
-          `👑 <b>WhatsHire Executive Stats:</b>\n\n` +
+          `👑 <b>TeleHire Executive Stats:</b>\n\n` +
           `👥 <b>Total Candidates:</b> ${total_users}\n` +
           `⭐ <b>Paid Subscribers:</b> ${paid_users} (${total_users > 0 ? ((paid_users / total_users) * 100).toFixed(1) : 0}%)\n` +
           `🆓 <b>Free Users:</b> ${free_users}\n` +
@@ -230,7 +230,7 @@ function createBot() {
     const remaining = isGod ? '👑 Unlimited' : Math.max(0, (planConfig.auto + (user.bonus_auto_quota || 0)) - used);
 
     const planMsg = 
-      `💼 <b>Your WhatsHire Subscription & Plan</b>\n\n` +
+      `💼 <b>Your TeleHire Subscription & Plan</b>\n\n` +
       `• <b>Status:</b> ${user.is_paid ? '⭐ Paid Subscriber' : '🆓 Free Trial'}\n` +
       `• <b>Current Plan:</b> <b>${isGod ? '👑 GOD MODE' : escapeHtml(planConfig.name.toUpperCase())}</b>\n` +
       `• <b>Quota Remaining:</b> ${remaining} applies (used: ${used}/${totalAllowed})\n` +
@@ -380,7 +380,7 @@ function createBot() {
           user.state = 'ASK_RESUME';
           await user.save();
           return ctx.reply(
-            `Welcome to WhatsHire Job Apply Bot!\n` +
+            `Welcome to TeleHire Job Apply Bot!\n` +
             `I auto-apply to jobs on Workable, Lever, Greenhouse, Ashby and provide real live links for LinkedIn/Cutshort/Hirist.\n\n` +
             `✨ First 3 applications FREE + 10 job links FREE.\n` +
             `📎 Send your resume (PDF) to get started`
@@ -845,9 +845,9 @@ async function sendExtensionActivationGuide(ctx, user, planName = 'POPULAR') {
     `• In Chrome, go to: <code>chrome://extensions/</code>\n` +
     `• Enable <b>Developer mode</b> (toggle in top-right)\n` +
     `• Click <b>Load unpacked</b> -> Select the unzipped <code>extension</code> folder\n` +
-    `• WhatsHire icon appears in your toolbar\n\n` +
+    `• TeleHire icon appears in your toolbar\n\n` +
     `<b>Step 2: Sync Your Telegram Profile</b>\n` +
-    `• Click the <b>WhatsHire icon</b> in your Chrome toolbar\n` +
+    `• Click the <b>TeleHire icon</b> in your Chrome toolbar\n` +
     `• Enter your email: <code>${escapeHtml(user.email || 'your_email@gmail.com')}</code>\n` +
     `• Enter your License Key:\n` +
     `🔑 <code>${licenseKey}</code>\n` +

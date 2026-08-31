@@ -1,6 +1,6 @@
-# WhatsHire 🚀 — Automated Telegram Job Bot SaaS & Executive Admin God Mode
+# TeleHire 🚀 — Automated Telegram Job Bot SaaS & Executive Admin God Mode
 
-WhatsHire is a production-grade Telegram Job Bot SaaS that discovers live, verified jobs across global tech companies and ATS platforms (Greenhouse, Lever, Ashby, RemoteOK, Arbeitnow) and manages the end-to-end candidate onboarding, ATS resume optimization, prioritized drip auto-applications, viral referral mechanics, Add-Ons Store, and a full-featured **Executive Web Admin Dashboard with God Mode**.
+TeleHire is a production-grade Telegram Job Bot SaaS that discovers live, verified jobs across global tech companies and ATS platforms (Greenhouse, Lever, Ashby, RemoteOK, Arbeitnow) and manages the end-to-end candidate onboarding, ATS resume optimization, prioritized drip auto-applications, viral referral mechanics, Add-Ons Store, and a full-featured **Executive Web Admin Dashboard with God Mode**.
 
 ---
 

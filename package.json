@@ -1,7 +1,7 @@
 {
-  "name": "whatshire-telegram-bot",
+  "name": "telehire-telegram-bot",
   "version": "1.0.0",
-  "description": "WhatsHire - Production-ready Telegram Job Bot SaaS with 100% Free Live Public APIs",
+  "description": "TeleHire - Production-ready Telegram Job Bot SaaS with 100% Free Live Public APIs",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -15,7 +15,7 @@
     "ats",
     "telegraf"
   ],
-  "author": "WhatsHire",
+  "author": "TeleHire",
   "license": "ISC",
   "dependencies": {
     "adm-zip": "^0.6.0",

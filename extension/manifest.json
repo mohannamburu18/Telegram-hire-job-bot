@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "WhatsHire - Safe Job Form Filler (Paid Users Only) - Manual Submit",
+  "name": "TeleHire - Safe Job Form Filler (Paid Users Only) - Manual Submit",
   "version": "1.0.0",
-  "description": "Safe form filler like Google Autofill for job applications. Only fills fields with human-like typing. You review and submit manually. We never auto-click Submit. This protects your LinkedIn, Indeed, Naukri account from ban. 99% safe, less than 1% ban chance because runs in your own browser, your own IP, human typing, manual submit, 40/day limit. Works on LinkedIn Easy Apply, Naukri, Indeed, Cutshort, Hirist, Wellfound, Workable, Lever, Greenhouse. Paid users only - checks subscription from WhatsHire Telegram bot backend. When quota or subscription ends, extension stops. Not a bot, not auto-apply.",
+  "description": "Safe form filler like Google Autofill for job applications. Only fills fields with human-like typing. You review and submit manually. We never auto-click Submit. This protects your LinkedIn, Indeed, Naukri account from ban. 99% safe, less than 1% ban chance because runs in your own browser, your own IP, human typing, manual submit, 40/day limit. Works on LinkedIn Easy Apply, Naukri, Indeed, Cutshort, Hirist, Wellfound, Workable, Lever, Greenhouse. Paid users only - checks subscription from TeleHire Telegram bot backend. When quota or subscription ends, extension stops. Not a bot, not auto-apply.",
   "permissions": [
     "storage",
     "activeTab"
@@ -47,7 +47,7 @@
   ],
   "action": {
     "default_popup": "popup.html",
-    "default_title": "WhatsHire Safe Form Filler (Paid Users Only)"
+    "default_title": "TeleHire Safe Form Filler (Paid Users Only)"
   },
   "icons": {
     "16": "icon16.png",
