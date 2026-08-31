@@ -1,12 +1,13 @@
 {
   "manifest_version": 3,
   "name": "TeleHire - Real-Time Safe Job Form Filler & Auto-Apply",
-  "version": "2.0.0",
-  "description": "Real-time safe form filler and multi-step application assistant for LinkedIn Easy Apply, Greenhouse, Lever, Ashby, Workable, Naukri, and modern ATS platforms. Human-paced typing, real-time field mapping, and mandatory manual submission review.",
+  "version": "2.1.0",
+  "description": "Real-time persistent side panel and multi-step application autofill assistant for LinkedIn Easy Apply, Greenhouse, Lever, Ashby, Workable, Naukri, and modern ATS platforms. Human-paced typing, real-time field mapping, and mandatory manual submission review.",
   "permissions": [
     "storage",
     "activeTab",
-    "tabs"
+    "tabs",
+    "sidePanel"
   ],
   "host_permissions": [
     "*://*.linkedin.com/*",
@@ -29,6 +30,9 @@
   ],
   "background": {
     "service_worker": "background.js"
+  },
+  "side_panel": {
+    "default_path": "sidepanel.html"
   },
   "content_scripts": [
     {

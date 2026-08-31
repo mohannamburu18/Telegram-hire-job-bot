@@ -1,12 +1,14 @@
 /**
- * TeleHire Real-Time Safe Job Form Filler & Auto-Apply Execution Engine
- * Multi-Platform ATS Adapters (LinkedIn Easy Apply, Greenhouse, Lever, Ashby, Workable, Naukri, Generic)
- * Strict Safety Gate: Real-Time Field Mapping · Bounded Polling · Zero Automatic Final Submit
+ * TeleHire Real-Time Safe Job Form Filler & Multi-Platform ATS Execution Engine (Phase 7 Final)
+ * Multi-Platform Adapters · Persistent State Machine · Bounded Polling · Strict Manual Review Gate
  */
 
 (function () {
+  if (window.__telehireInitialized) return;
+  window.__telehireInitialized = true;
+
   let isExecuting = false;
-  let isOrchestrating = false;
+  let currentActiveTaskId = null;
   window.__telehire_dismissed = false;
   const filledSignatures = new Set();
 
@@ -486,7 +488,6 @@
   // =========================================================================
 
   const PlatformAdapters = {
-    // A. LinkedIn Easy Apply
     LinkedIn: {
       name: 'LinkedIn Easy Apply',
       detect() {
@@ -538,7 +539,6 @@
       },
     },
 
-    // B. Greenhouse
     Greenhouse: {
       name: 'Greenhouse',
       detect() {
@@ -554,7 +554,6 @@
       },
     },
 
-    // C. Lever
     Lever: {
       name: 'Lever',
       detect() {
@@ -570,7 +569,6 @@
       },
     },
 
-    // D. Ashby
     Ashby: {
       name: 'Ashby',
       detect() {
@@ -586,7 +584,6 @@
       },
     },
 
-    // E. Workable
     Workable: {
       name: 'Workable',
       detect() {
@@ -602,7 +599,6 @@
       },
     },
 
-    // F. Naukri
     Naukri: {
       name: 'Naukri',
       detect() {
@@ -618,7 +614,6 @@
       },
     },
 
-    // G. Generic ATS Fallback
     Generic: {
       name: 'Generic ATS',
       detect() {
@@ -668,7 +663,6 @@
   function checkRequiredFieldsIncomplete(container) {
     if (!container || !container.isConnected) return { hasIncomplete: false };
 
-    // Validation errors in view
     const errors = Array.from(container.querySelectorAll('.artdeco-inline-feedback--error, .fb-dash-form-element--error, [data-test-form-element-error-message], .error-message')).filter(isVisible);
     if (errors.length > 0) {
       return { hasIncomplete: true, reason: errors[0].innerText.trim() || 'Validation error present' };
@@ -799,18 +793,36 @@
   async function executeAutofillFlow(profile, taskId = null) {
     if (isExecuting) return { totalFilled: 0, status: 'BUSY' };
     isExecuting = true;
+    currentActiveTaskId = taskId;
 
-    const { adapter, root, name } = detectActiveAdapter();
+    // Bounded search for application form in DOM (up to 15s)
+    let activeAdapterData = null;
+    const startFormWait = Date.now();
+    while (Date.now() - startFormWait < 15000) {
+      activeAdapterData = detectActiveAdapter();
+      if (activeAdapterData && activeAdapterData.root && isVisible(activeAdapterData.root)) {
+        break;
+      }
+      await new Promise(r => setTimeout(r, 400));
+    }
+
+    const { adapter, root, name } = activeAdapterData || { adapter: PlatformAdapters.Generic, root: document.body, name: 'Generic ATS' };
     window.__telehire_diagnostics.platform = name;
     window.__telehire_diagnostics.applicationDetected = Boolean(root);
     window.__telehire_diagnostics.status = 'EXECUTING';
 
     console.log(`%c[TeleHire] Active Platform: ${name}`, 'color: #10b981; font-weight: bold;');
 
-    if (!root) {
-      showNotification('ℹ️ No supported job application form detected on this page.', 'info');
-      isExecuting = false;
-      return { totalFilled: 0, status: 'APPLICATION_NOT_FOUND' };
+    if (taskId) {
+      chrome.runtime.sendMessage({
+        type: 'REPORT_TASK_PROGRESS',
+        payload: {
+          taskId,
+          status: 'DETECTED',
+          platform: name,
+          step: 'FORM_DETECTED',
+        },
+      });
     }
 
     let totalFilled = 0;
@@ -829,10 +841,34 @@
       window.__telehire_diagnostics.currentStep = stepInfo.stage;
       window.__telehire_diagnostics.stepIndex = stepNumber;
 
+      if (taskId) {
+        chrome.runtime.sendMessage({
+          type: 'REPORT_TASK_PROGRESS',
+          payload: {
+            taskId,
+            status: 'FILLING',
+            platform: name,
+            step: `${stepInfo.stage} (${stepNumber}/${maxSteps})`,
+            fieldsFilled: totalFilled,
+          },
+        });
+      }
+
       // Check Review Screen
       if (stepInfo.stage === 'REVIEW') {
         window.__telehire_diagnostics.status = 'READY_FOR_MANUAL_SUBMIT';
         console.log('%c[TeleHire Safety Gate] Review step reached! Stopping automation for manual review.', 'color: #f59e0b; font-weight: bold;');
+        if (taskId) {
+          chrome.runtime.sendMessage({
+            type: 'REPORT_TASK_PROGRESS',
+            payload: {
+              taskId,
+              status: 'READY_FOR_MANUAL_SUBMIT',
+              step: 'REVIEW_READY',
+              fieldsFilled: totalFilled,
+            },
+          });
+        }
         break;
       }
 
@@ -858,6 +894,17 @@
         window.__telehire_diagnostics.status = 'MANUAL_REQUIRED';
         window.__telehire_diagnostics.reason = reqCheck.reason;
         showNotification(`⚠️ ${reqCheck.reason}. Please review manually.`, 'warning');
+        if (taskId) {
+          chrome.runtime.sendMessage({
+            type: 'REPORT_TASK_PROGRESS',
+            payload: {
+              taskId,
+              status: 'MANUAL_REQUIRED',
+              reason: reqCheck.reason,
+              fieldsFilled: totalFilled,
+            },
+          });
+        }
         break;
       }
 
@@ -869,6 +916,17 @@
       if (nav.type === 'SUBMIT') {
         window.__telehire_diagnostics.status = 'READY_FOR_MANUAL_SUBMIT';
         console.log('%c[TeleHire Safety Gate] Final Submit button detected. Automation stopped.', 'color: #f59e0b; font-weight: bold;');
+        if (taskId) {
+          chrome.runtime.sendMessage({
+            type: 'REPORT_TASK_PROGRESS',
+            payload: {
+              taskId,
+              status: 'READY_FOR_MANUAL_SUBMIT',
+              step: 'FINAL_SUBMIT_GATE',
+              fieldsFilled: totalFilled,
+            },
+          });
+        }
         break;
       }
 
@@ -985,7 +1043,7 @@
 
     document.getElementById('wh-btn-fill')?.addEventListener('click', (e) => {
       e.stopPropagation();
-      triggerSafeAutofill();
+      triggerSafeAutofill(currentActiveTaskId);
     });
 
     document.getElementById('wh-btn-close')?.addEventListener('click', (e) => {
@@ -1053,10 +1111,21 @@
 
   // Runtime Message Dispatcher
   chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+    if (msg.type === 'AUTO_START_QUEUE_TASK') {
+      if (!isExecuting) {
+        currentActiveTaskId = msg.task?.taskId;
+        triggerSafeAutofill(msg.task?.taskId).then(() => sendResponse({ started: true, diagnostics: window.__telehire_diagnostics }));
+        return true;
+      }
+      sendResponse({ started: false, reason: 'Already executing' });
+      return true;
+    }
+
     if (msg.type === 'TRIGGER_FILL') {
       triggerSafeAutofill(msg.taskId).then(() => sendResponse({ success: true, diagnostics: window.__telehire_diagnostics }));
       return true;
     }
+
     if (msg.type === 'GET_DIAGNOSTICS') {
       sendResponse({ diagnostics: window.__telehire_diagnostics });
       return true;

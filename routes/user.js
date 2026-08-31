@@ -352,17 +352,16 @@ async function getPendingTaskHandler(req, res) {
       return res.status(401).json({ success: false, error: 'Invalid license key' });
     }
 
-    const pendingTask = await ApplicationQueue.findOne({
-      user_id: user._id,
-      status: 'QUEUED',
-    }).sort({ createdAt: 1 });
+    // Atomic claim of next queued task
+    const pendingTask = await ApplicationQueue.findOneAndUpdate(
+      { user_id: user._id, status: 'QUEUED' },
+      { $set: { status: 'OPENING' } },
+      { sort: { createdAt: 1 }, new: true }
+    );
 
     if (!pendingTask) {
       return res.status(200).json({ success: true, task: null });
     }
-
-    pendingTask.status = 'OPENING';
-    await pendingTask.save();
 
     return res.status(200).json({
       success: true,

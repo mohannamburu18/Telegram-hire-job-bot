@@ -1,10 +1,17 @@
 /**
- * TeleHire Safe Filler & Auto-Apply Background Service Worker (Phase 7 Real-Time Repaired)
- * Handles Subscription Verification, Profile Fetching, Quota Decrement, and Application Task Queue
+ * TeleHire Safe Filler & Auto-Apply Background Service Worker (Phase 7 Real-Time Engine)
+ * Persistent Session Management · Side Panel Opener · Multi-Tab Queue Orchestrator
  */
 
 const BACKEND_URL = 'https://telegram-hire-job-bot.onrender.com';
 const LOCAL_BACKEND_URL = 'http://localhost:3000';
+
+let activeQueueSession = null;
+
+// Enable Side Panel opening on action click
+if (chrome.sidePanel && chrome.sidePanel.setPanelBehavior) {
+  chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(() => {});
+}
 
 function getTodayKey() {
   return new Date().toISOString().split('T')[0];
@@ -18,6 +25,22 @@ async function getBackendUrl() {
   });
 }
 
+async function fetchWithRetry(url, options = {}, retries = 2) {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 12000);
+      const res = await fetch(url, { ...options, signal: controller.signal });
+      clearTimeout(timeoutId);
+      return await res.json();
+    } catch (err) {
+      if (attempt === retries) throw err;
+      await new Promise(r => setTimeout(r, 1500));
+    }
+  }
+}
+
+// Runtime Message Listener
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.type === 'CHECK_SUBSCRIPTION') {
     handleCheckSubscription(request.email, request.license).then(sendResponse);
@@ -39,8 +62,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return true;
   }
 
-  if (request.type === 'FETCH_APPLICATION_TASK') {
-    handleFetchTask(request.email, request.license).then(sendResponse);
+  if (request.type === 'FETCH_QUEUE_STATUS') {
+    handleFetchQueueStatus(request.email, request.license).then(sendResponse);
+    return true;
+  }
+
+  if (request.type === 'START_QUEUE_RUNNER') {
+    handleStartQueueRunner(request.email, request.license).then(sendResponse);
     return true;
   }
 
@@ -48,23 +76,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     handleUpdateTaskStatus(request.payload).then(sendResponse);
     return true;
   }
+
+  if (request.type === 'REPORT_TASK_PROGRESS') {
+    handleReportTaskProgress(request.payload).then(sendResponse);
+    return true;
+  }
 });
 
-async function fetchWithRetry(url, options = {}, retries = 2) {
-  for (let attempt = 1; attempt <= retries; attempt++) {
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 12000);
-      const res = await fetch(url, { ...options, signal: controller.signal });
-      clearTimeout(timeoutId);
-      return await res.json();
-    } catch (err) {
-      if (attempt === retries) throw err;
-      await new Promise(r => setTimeout(r, 2000));
-    }
-  }
-}
-
+// 1. Subscription & Session Verification
 async function handleCheckSubscription(email, license = '') {
   if (!email) return { allowed: false, reason: 'Please enter your Telegram registered email.' };
 
@@ -112,11 +131,12 @@ async function handleCheckSubscription(email, license = '') {
   } catch (err) {
     return {
       allowed: false,
-      reason: `Could not connect to TeleHire server. Please verify: 1) Server is running, 2) Internet connection is active. (Error: ${err.message})`,
+      reason: `Could not connect to TeleHire server. (Error: ${err.message})`,
     };
   }
 }
 
+// 2. Profile Fetcher
 async function handleGetProfile(email, license = '') {
   try {
     const backend = await getBackendUrl();
@@ -148,6 +168,7 @@ async function handleGetProfile(email, license = '') {
   }
 }
 
+// 3. Quota Decrement
 async function handleUseQuota(payload) {
   try {
     const backend = await getBackendUrl();
@@ -188,29 +209,115 @@ async function handleUseQuota(payload) {
   }
 }
 
-async function handleFetchTask(email, license) {
+// 4. Fetch Queue Status
+async function handleFetchQueueStatus(email, license) {
   try {
     const backend = await getBackendUrl();
-    const targetUrl = `${backend}/api/queue/pending?email=${encodeURIComponent(email)}&license=${encodeURIComponent(license)}`;
+    const targetUrl = `${backend}/api/queue/status?email=${encodeURIComponent(email)}&license=${encodeURIComponent(license)}`;
     return await fetchWithRetry(targetUrl);
   } catch (err) {
     return { success: false, error: err.message };
   }
 }
 
-async function handleUpdateTaskStatus(payload) {
+// 5. Start Queue Runner: Claims task, creates tab, and initiates execution
+async function handleStartQueueRunner(email, license) {
   try {
     const backend = await getBackendUrl();
-    const targetUrl = `${backend}/api/queue/updateStatus`;
-    return await fetchWithRetry(targetUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
+    const targetUrl = `${backend}/api/queue/pending?email=${encodeURIComponent(email)}&license=${encodeURIComponent(license)}`;
+    const res = await fetchWithRetry(targetUrl);
+
+    if (res && res.success && res.task) {
+      const task = res.task;
+      const tab = await chrome.tabs.create({ url: task.jobUrl });
+
+      activeQueueSession = {
+        taskId: task.taskId,
+        jobUrl: task.jobUrl,
+        title: task.title,
+        company: task.company,
+        platform: task.platform,
+        status: 'OPENING',
+        tabId: tab.id,
+        email,
+        license,
+      };
+
+      chrome.storage.local.set({ activeTask: activeQueueSession });
+      broadcastTaskUpdate(activeQueueSession);
+
+      return { success: true, task: activeQueueSession };
+    }
+
+    return { success: false, message: 'No pending tasks in queue' };
   } catch (err) {
     return { success: false, error: err.message };
   }
 }
+
+// 6. Update Task Status
+async function handleUpdateTaskStatus(payload) {
+  try {
+    const backend = await getBackendUrl();
+    const targetUrl = `${backend}/api/queue/updateStatus`;
+    const res = await fetchWithRetry(targetUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+
+    if (activeQueueSession && activeQueueSession.taskId === payload.taskId) {
+      activeQueueSession = { ...activeQueueSession, ...payload };
+      chrome.storage.local.set({ activeTask: activeQueueSession });
+      broadcastTaskUpdate(activeQueueSession);
+    }
+
+    return res;
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+}
+
+// 7. Report Task Progress from Content Script
+async function handleReportTaskProgress(payload) {
+  if (activeQueueSession && activeQueueSession.taskId === payload.taskId) {
+    activeQueueSession = { ...activeQueueSession, ...payload };
+    chrome.storage.local.set({ activeTask: activeQueueSession });
+    broadcastTaskUpdate(activeQueueSession);
+
+    // Sync to backend
+    handleUpdateTaskStatus(payload);
+  }
+  return { success: true };
+}
+
+function broadcastTaskUpdate(task) {
+  chrome.runtime.sendMessage({ type: 'QUEUE_TASK_LIVE_UPDATE', task }).catch(() => {});
+}
+
+// 8. Tab Navigation Listener: Detects loaded tab and dispatches autofill trigger
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  if (activeQueueSession && activeQueueSession.tabId === tabId && changeInfo.status === 'complete') {
+    console.log(`[TeleHire Background] Tab #${tabId} complete. Triggering autofill on ${tab.url}...`);
+
+    // Retry sending message to content script to allow DOM initialization
+    const delays = [600, 1500, 3000];
+    delays.forEach(delay => {
+      setTimeout(() => {
+        chrome.tabs.sendMessage(tabId, {
+          type: 'AUTO_START_QUEUE_TASK',
+          task: activeQueueSession,
+        }, (res) => {
+          if (chrome.runtime.lastError) {
+            // Content script may still be loading
+          } else if (res && res.started) {
+            console.log(`[TeleHire Background] Autofill started on tab #${tabId}`);
+          }
+        });
+      }, delay);
+    });
+  }
+});
 
 async function getDailyUsage() {
   return new Promise((resolve) => {

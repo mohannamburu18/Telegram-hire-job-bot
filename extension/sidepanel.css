@@ -1,0 +1,429 @@
+/* TeleHire Copilot Side Panel Stylesheet */
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+body {
+  background-color: #0b0f19;
+  color: #f1f5f9;
+  font-size: 13px;
+  line-height: 1.5;
+  width: 100%;
+  min-height: 100vh;
+}
+
+.th-container {
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Header */
+.th-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #1e293b;
+}
+
+.th-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.th-logo {
+  background: linear-gradient(135deg, #2563eb, #38bdf8);
+  color: #fff;
+  font-weight: 900;
+  font-size: 13px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+}
+
+.th-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.th-subtitle {
+  font-size: 10px;
+  color: #94a3b8;
+  display: block;
+}
+
+/* Badges */
+.th-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 9999px;
+  display: inline-block;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.th-badge-paid {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.th-badge-free {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.th-badge-info {
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+}
+
+.th-badge-neutral {
+  background: #1e293b;
+  color: #94a3b8;
+}
+
+/* Cards */
+.th-card {
+  background: #131b2e;
+  border: 1px solid #1e293b;
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.th-card-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #e2e8f0;
+  margin-bottom: 4px;
+}
+
+.th-card-desc {
+  font-size: 11px;
+  color: #94a3b8;
+  margin-bottom: 10px;
+}
+
+.th-section-tag {
+  font-size: 10px;
+  font-weight: 700;
+  color: #64748b;
+  letter-spacing: 0.05em;
+}
+
+/* Inputs & Form */
+.th-form-group {
+  margin-bottom: 10px;
+}
+
+.th-form-group label {
+  display: block;
+  font-size: 11px;
+  color: #94a3b8;
+  margin-bottom: 4px;
+}
+
+.th-input {
+  width: 100%;
+  background: #0b0f19;
+  border: 1px solid #334155;
+  color: #f8fafc;
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+}
+
+.th-input:focus {
+  outline: none;
+  border-color: #38bdf8;
+}
+
+/* Buttons */
+.th-btn {
+  border: none;
+  padding: 9px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.th-btn-block {
+  width: 100%;
+}
+
+.th-btn-primary {
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.th-btn-primary:hover {
+  background: #1d4ed8;
+}
+
+.th-btn-success {
+  background: #059669;
+  color: #ffffff;
+}
+
+.th-btn-success:hover {
+  background: #047857;
+}
+
+.th-btn-amber {
+  background: #d97706;
+  color: #ffffff;
+}
+
+.th-btn-amber:hover {
+  background: #b45309;
+}
+
+.th-btn-ghost-sm {
+  background: transparent;
+  border: 1px solid #334155;
+  color: #94a3b8;
+  font-size: 10px;
+  padding: 3px 6px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.th-btn-ghost-sm:hover {
+  color: #f1f5f9;
+  border-color: #64748b;
+}
+
+.th-actions-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+/* Profile Card */
+.th-profile-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+
+.th-profile-label {
+  font-size: 9px;
+  font-weight: 700;
+  color: #64748b;
+  letter-spacing: 0.05em;
+}
+
+.th-profile-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.th-profile-email {
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.th-stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr 1fr;
+  gap: 6px;
+  background: #0b0f19;
+  padding: 8px;
+  border-radius: 6px;
+}
+
+.th-stat-box {
+  display: flex;
+  flex-direction: column;
+}
+
+.th-stat-label {
+  font-size: 9px;
+  color: #64748b;
+  text-transform: uppercase;
+}
+
+.th-stat-value {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.th-highlight-blue { color: #38bdf8; }
+.th-highlight-green { color: #34d399; }
+.th-highlight-amber { color: #fbbf24; }
+
+/* Active Job Body */
+.th-active-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.th-active-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #f8fafc;
+  line-height: 1.3;
+}
+
+.th-active-meta {
+  font-size: 11px;
+  color: #94a3b8;
+  margin: 3px 0 8px 0;
+}
+
+.th-progress-bar-container {
+  width: 100%;
+  height: 6px;
+  background: #1e293b;
+  border-radius: 9999px;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+
+.th-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #2563eb, #38bdf8);
+  transition: width 0.3s ease;
+}
+
+.th-step-indicators {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.th-alert-box {
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  color: #fde68a;
+  padding: 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  margin-top: 8px;
+  line-height: 1.4;
+}
+
+/* Queue List */
+.th-queue-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.th-queue-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.th-queue-item {
+  background: #0b0f19;
+  border: 1px solid #1e293b;
+  padding: 8px 10px;
+  border-radius: 6px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.th-queue-item-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #f1f5f9;
+}
+
+.th-queue-item-company {
+  font-size: 10px;
+  color: #94a3b8;
+}
+
+.th-empty-queue {
+  text-align: center;
+  color: #64748b;
+  font-size: 11px;
+  padding: 16px 8px;
+  line-height: 1.4;
+}
+
+/* Log Box */
+.th-log-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.th-log-box {
+  background: #070a13;
+  border: 1px solid #1e293b;
+  border-radius: 6px;
+  padding: 8px;
+  font-family: monospace;
+  font-size: 10px;
+  color: #94a3b8;
+  max-height: 110px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.th-log-time {
+  color: #38bdf8;
+}
+
+.th-status-msg {
+  font-size: 11px;
+  margin-top: 6px;
+  color: #f87171;
+}
+
+/* Footer */
+.th-footer {
+  text-align: center;
+  padding-top: 8px;
+  border-top: 1px solid #1e293b;
+}
+
+.th-footer-badge {
+  font-size: 9px;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.th-footer-text {
+  font-size: 10px;
+  color: #64748b;
+  margin-top: 2px;
+}

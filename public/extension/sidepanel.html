@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>TeleHire Copilot - Side Panel</title>
+  <link rel="stylesheet" href="sidepanel.css">
+</head>
+<body>
+  <div class="th-container">
+    <!-- Header -->
+    <header class="th-header">
+      <div class="th-brand">
+        <div class="th-logo">TH</div>
+        <div>
+          <h1 class="th-title">TeleHire Copilot</h1>
+          <span class="th-subtitle">Real-Time Application Queue & Autofill</span>
+        </div>
+      </div>
+      <div id="auth-badge-container">
+        <span id="badge-auth" class="th-badge th-badge-neutral">Connecting...</span>
+      </div>
+    </header>
+
+    <!-- 1. Authentication Card (shown only when logged out) -->
+    <section id="card-auth" class="th-card" style="display: none;">
+      <h3 class="th-card-title">🔐 Candidate Authentication</h3>
+      <p class="th-card-desc">Enter your Telegram registered email and license key once to enable your persistent queue.</p>
+      
+      <div class="th-form-group">
+        <label for="input-email">Telegram Registered Email:</label>
+        <input type="email" id="input-email" class="th-input" placeholder="ncttdp@gmail.com">
+      </div>
+
+      <div class="th-form-group">
+        <label for="input-license">License Key:</label>
+        <input type="text" id="input-license" class="th-input" placeholder="WH-1E92-DD70-B077">
+      </div>
+
+      <button id="btn-login" class="th-btn th-btn-primary th-btn-block">Verify & Activate Session</button>
+      <div id="login-status" class="th-status-msg"></div>
+    </section>
+
+    <!-- 2. Candidate Profile & Quota Summary (shown when logged in) -->
+    <section id="card-profile" class="th-card" style="display: none;">
+      <div class="th-profile-header">
+        <div>
+          <span class="th-profile-label">CANDIDATE</span>
+          <h3 id="prof-name" class="th-profile-name">Mohan Krishna Namburu</h3>
+          <span id="prof-email" class="th-profile-email">ncttdp@gmail.com</span>
+        </div>
+        <button id="btn-logout" class="th-btn-ghost-sm" title="Log out / switch account">Logout</button>
+      </div>
+
+      <div class="th-stats-grid">
+        <div class="th-stat-box">
+          <span class="th-stat-label">Plan</span>
+          <span id="prof-plan" class="th-stat-value th-highlight-blue">POWER</span>
+        </div>
+        <div class="th-stat-box">
+          <span class="th-stat-label">Quota Left</span>
+          <span id="prof-quota" class="th-stat-value th-highlight-green">Unlimited</span>
+        </div>
+        <div class="th-stat-box">
+          <span class="th-stat-label">Today's Safety Fills</span>
+          <span id="prof-daily" class="th-stat-value th-highlight-amber">0 / 40</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. Active Application Live Status Card -->
+    <section id="card-active-job" class="th-card" style="display: none;">
+      <div class="th-active-header">
+        <span class="th-section-tag">CURRENT ACTIVE APPLICATION</span>
+        <span id="job-status-badge" class="th-badge th-badge-info">READY</span>
+      </div>
+
+      <div class="th-active-body">
+        <h4 id="job-title" class="th-active-title">No Active Job Selected</h4>
+        <div class="th-active-meta">
+          <span id="job-company">Direct Employer</span> · <span id="job-platform">ATS Platform</span>
+        </div>
+
+        <div class="th-progress-bar-container">
+          <div id="job-progress-bar" class="th-progress-bar" style="width: 0%;"></div>
+        </div>
+
+        <div class="th-step-indicators">
+          <span id="job-step-text">Step: Idle</span>
+          <span id="job-fields-count">Fields: 0 filled</span>
+        </div>
+
+        <div id="job-reason-box" class="th-alert-box" style="display: none;"></div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="th-actions-stack">
+        <button id="btn-fill-current" class="th-btn th-btn-primary th-btn-block">
+          ⚡ Fill Application on Active Tab
+        </button>
+        <button id="btn-process-next" class="th-btn th-btn-success th-btn-block">
+          🚀 Open & Process Next Queued Job
+        </button>
+        <button id="btn-mark-submitted" class="th-btn th-btn-amber th-btn-block" style="display: none;">
+          ✓ Mark Submitted & Process Next
+        </button>
+      </div>
+    </section>
+
+    <!-- 4. Real-Time Application Queue List -->
+    <section id="card-queue-list" class="th-card" style="display: none;">
+      <div class="th-queue-header">
+        <h3 class="th-card-title">📋 Application Queue (<span id="queue-count">0</span> waiting)</h3>
+        <button id="btn-refresh-queue" class="th-btn-ghost-sm">↻ Refresh</button>
+      </div>
+
+      <div id="queue-items-container" class="th-queue-list">
+        <div class="th-empty-queue">No jobs currently in queue. Search jobs in <a href="https://t.me/TeleHireJOB_bot" target="_blank" style="color: #38bdf8;">@TeleHireJOB_bot</a> and tap <b>[🚀 Queue for Extension]</b> to populate.</div>
+      </div>
+    </section>
+
+    <!-- 5. Real-Time Activity Log -->
+    <section class="th-card">
+      <div class="th-log-header">
+        <span class="th-section-tag">ACTIVITY & DIAGNOSTIC LOG</span>
+        <button id="btn-clear-log" class="th-btn-ghost-sm">Clear</button>
+      </div>
+      <div id="activity-log" class="th-log-box">
+        <div class="th-log-line"><span class="th-log-time">[Init]</span> TeleHire Side Panel ready.</div>
+      </div>
+    </section>
+
+    <!-- Footer Safety Notice -->
+    <footer class="th-footer">
+      <span class="th-footer-badge">🛡️ Candidate Safety Gate</span>
+      <p class="th-footer-text">Human-paced typing. Final submission is strictly manual. We never click Submit automatically.</p>
+    </footer>
+  </div>
+
+  <script src="sidepanel.js"></script>
+</body>
+</html>
