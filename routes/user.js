@@ -257,7 +257,7 @@ async function getProfileHandler(req, res) {
 // Health Check
 router.get(['/health', '/api/health'], (req, res) => {
   res.header('Access-Control-Allow-Origin', '*');
-  res.status(200).json({ status: 'ok', message: 'WhatsHire server running' });
+  res.status(200).json({ status: 'ok', message: 'TeleHire server running' });
 });
 
 // Extension Routes (both root & prefixed)
