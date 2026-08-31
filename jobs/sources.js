@@ -538,10 +538,23 @@ async function fetchLiveJobs(role, location, userExpYears = 0) {
     }
   });
 
+  // Strict Fresher Experience Filter Pass
+  let fresherFiltered = [];
+  for (const j of combined) {
+    if (!j) continue;
+    const expCheck = isFresherJob(j.title, j.description || '', userExp);
+    if (!expCheck.keep) {
+      console.log(`Filtered non-fresher for 0-1 yr: ${j.title}`);
+      continue;
+    }
+    j.experience_score = expCheck.score;
+    fresherFiltered.push(j);
+  }
+
   // Deduplicate by job_url
   const seen = new Set();
   let deduped = [];
-  for (const j of combined) {
+  for (const j of fresherFiltered) {
     if (j && j.job_url && !seen.has(j.job_url)) {
       seen.add(j.job_url);
       deduped.push(j);
@@ -569,6 +582,7 @@ async function fetchLiveJobs(role, location, userExpYears = 0) {
   let manualJobs = liveChecked.filter(j => j.sourceType === 'MANUAL').sort(sortFn);
 
   console.log(`[REAL FINAL] Total real: ${combined.length} deduped: ${deduped.length} live: ${liveChecked.length} AUTO SAFE: ${autoJobs.length} MANUAL: ${manualJobs.length} - ZERO SEED`);
+  console.log(`After fresher filter 0-1 yrs: AUTO ${autoJobs.length} jobs, MANUAL ${manualJobs.length} jobs - No senior III jobs`);
 
   return {
     autoJobs: autoJobs.slice(0, 100),

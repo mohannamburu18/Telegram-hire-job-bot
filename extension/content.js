@@ -1,11 +1,11 @@
 /**
- * TeleHire Safe Job Form Filler - Content Script
+ * TeleHire Safe Job Form Filler - Content Script (Phase 6.1 Fixed)
  * 99% Safe · Human-like typing · Manual Submit · Paid Users Only
  */
 
 (function () {
   let isFilling = false;
-  window.__whatshire_dismissed = false;
+  window.__telehire_dismissed = false;
 
   // 1. Human-Like Typing Engine
   async function humanType(element, text) {
@@ -163,11 +163,11 @@
 
   // 4. Injected Top Banner UI (Pinned & Persistent)
   function injectTopBanner() {
-    if (window.__whatshire_dismissed) return;
-    if (document.getElementById('whatshire-floating-banner')) return;
+    if (window.__telehire_dismissed) return;
+    if (document.getElementById('whatshire-safe-bar')) return;
 
     const banner = document.createElement('div');
-    banner.id = 'whatshire-floating-banner';
+    banner.id = 'whatshire-safe-bar';
     banner.innerHTML = `
       <div class="wh-banner-content">
         <div class="wh-banner-left">
@@ -181,8 +181,11 @@
       </div>
     `;
 
-    // Append directly to body / documentElement outside SPA container
-    (document.body || document.documentElement).appendChild(banner);
+    // Append directly to documentElement or body
+    const root = document.documentElement || document.body;
+    if (root) {
+      root.insertBefore(banner, root.firstChild);
+    }
 
     document.getElementById('wh-btn-fill')?.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -191,7 +194,7 @@
 
     document.getElementById('wh-btn-close')?.addEventListener('click', (e) => {
       e.stopPropagation();
-      window.__whatshire_dismissed = true;
+      window.__telehire_dismissed = true;
       banner.remove();
     });
   }
@@ -231,7 +234,7 @@
           <p class="wh-modal-body">
             <strong>${filledCount} fields</strong> filled with human-like typing.<br><br>
             ⚠️ <strong>Safety Rule:</strong> Please manually review all fields, select your resume file, and click <em>Submit / Continue</em> yourself.<br><br>
-            <span class="wh-badge-safety">🛡️ Manual Submit protects your account (<1% ban risk)</span>
+            <span class="wh-badge-safety">🛡️ Manual Submit protects your account (&lt;1% ban risk)</span>
           </p>
           <div class="wh-modal-footer">
             <div class="wh-modal-stats">
@@ -263,18 +266,18 @@
   setTimeout(injectTopBanner, 1000);
 
   setInterval(() => {
-    if (!window.__whatshire_dismissed && !document.getElementById('whatshire-floating-banner')) {
+    if (!window.__telehire_dismissed && !document.getElementById('whatshire-safe-bar')) {
       injectTopBanner();
     }
-  }, 1500);
+  }, 3000);
 
   const observer = new MutationObserver(() => {
-    if (!window.__whatshire_dismissed && !document.getElementById('whatshire-floating-banner')) {
+    if (!window.__telehire_dismissed && !document.getElementById('whatshire-safe-bar')) {
       injectTopBanner();
     }
   });
 
-  if (document.body) {
-    observer.observe(document.body, { childList: true });
+  if (document.documentElement) {
+    observer.observe(document.documentElement, { childList: true });
   }
 })();

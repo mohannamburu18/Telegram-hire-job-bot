@@ -1,10 +1,10 @@
 /**
- * TeleHire Safe Filler - Background Service Worker (Phase 5.1 Fixed)
+ * TeleHire Safe Filler - Background Service Worker (Phase 6.1 Fixed)
  * Enforces Paid Subscription, Quota Decrement, and Daily Safety Limits
  */
 
-const DEFAULT_BACKEND = 'https://telegram-hire-job-bot.onrender.com';
-const LOCAL_FALLBACK = 'http://localhost:3000';
+const BACKEND_URL = 'https://telegram-hire-job-bot.onrender.com';
+const LOCAL_BACKEND_URL = 'http://localhost:3000';
 
 function getTodayKey() {
   return new Date().toISOString().split('T')[0];
@@ -13,7 +13,7 @@ function getTodayKey() {
 async function getBackendUrl() {
   return new Promise((resolve) => {
     chrome.storage.local.get(['customBackendUrl'], (data) => {
-      resolve(data.customBackendUrl || DEFAULT_BACKEND);
+      resolve(data.customBackendUrl || BACKEND_URL);
     });
   });
 }
@@ -44,7 +44,7 @@ async function fetchWithRetry(url, options = {}, retries = 2) {
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000);
+      const timeoutId = setTimeout(() => controller.abort(), 12000);
       const res = await fetch(url, { ...options, signal: controller.signal });
       clearTimeout(timeoutId);
       return await res.json();
@@ -69,11 +69,14 @@ async function handleCheckSubscription(email, license = '') {
     try {
       data = await fetchWithRetry(targetUrl, { method: 'GET', headers: { 'Content-Type': 'application/json' } });
     } catch (primaryErr) {
-      // If primary failed and was localhost, try production fallback or vice-versa
-      if (backend !== PRODUCTION_FALLBACK && !backend.includes('onrender.com')) {
-        const fallbackUrl = `${PRODUCTION_FALLBACK}/api/extension/verify?email=${encodeURIComponent(cleanEmail)}&license=${encodeURIComponent(cleanLicense)}`;
-        data = await fetchWithRetry(fallbackUrl, { method: 'GET', headers: { 'Content-Type': 'application/json' } });
-        chrome.storage.local.set({ customBackendUrl: PRODUCTION_FALLBACK });
+      // If primary failed and was not localhost, try local fallback
+      if (!backend.includes('localhost') && !backend.includes('127.0.0.1')) {
+        const fallbackUrl = `${LOCAL_BACKEND_URL}/api/extension/verify?email=${encodeURIComponent(cleanEmail)}&license=${encodeURIComponent(cleanLicense)}`;
+        try {
+          data = await fetchWithRetry(fallbackUrl, { method: 'GET', headers: { 'Content-Type': 'application/json' } });
+        } catch (secErr) {
+          throw primaryErr;
+        }
       } else {
         throw primaryErr;
       }
