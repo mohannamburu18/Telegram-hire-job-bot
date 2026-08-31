@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WhatsHire — AI Resume Rewrite (ATS 90%+ Score)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #0088cc;
+      --accent: #38bdf8;
+      --bg: #0b0f19;
+      --card-bg: #151e2e;
+      --card-border: #243247;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --success: #10b981;
+      --danger: #ef4444;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 36px 16px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 760px;
+      background-color: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 36px 32px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+      position: relative;
+    }
+
+    .container::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 6px;
+      background: linear-gradient(90deg, #10b981, #0088cc, #38bdf8);
+      border-radius: 20px 20px 0 0;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--success);
+      font-size: 13px;
+      font-weight: 700;
+      padding: 6px 14px;
+      border-radius: 9999px;
+      margin-bottom: 12px;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .header h1 {
+      font-size: 28px;
+      font-weight: 800;
+      margin-bottom: 8px;
+      letter-spacing: -0.5px;
+    }
+
+    .header p {
+      font-size: 14px;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 13.5px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .form-control {
+      width: 100%;
+      background: #0b0f19;
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      color: var(--text-main);
+      font-size: 14px;
+      outline: none;
+      transition: all 0.2s;
+    }
+
+    .form-control:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15);
+    }
+
+    textarea.form-control {
+      min-height: 110px;
+      resize: vertical;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12.5px;
+      line-height: 1.5;
+    }
+
+    .btn-submit {
+      width: 100%;
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      padding: 14px 20px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 10px 20px -5px rgba(16, 185, 129, 0.4);
+      transition: all 0.2s ease;
+      margin-top: 10px;
+    }
+
+    .btn-submit:hover {
+      background: linear-gradient(135deg, #059669, #047857);
+      transform: translateY(-1px);
+    }
+
+    .btn-submit:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .result-box {
+      margin-top: 28px;
+      padding: 24px;
+      background: #090d16;
+      border: 1px solid #1e293b;
+      border-radius: 14px;
+    }
+
+    .score-banner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 16px;
+      border-bottom: 1px solid #1e293b;
+      margin-bottom: 16px;
+    }
+
+    .score-number {
+      font-size: 26px;
+      font-weight: 800;
+      color: var(--success);
+    }
+
+    .preview-text {
+      white-space: pre-wrap;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12.5px;
+      color: #cbd5e1;
+      line-height: 1.6;
+      max-height: 380px;
+      overflow-y: auto;
+      background: #060911;
+      padding: 16px;
+      border-radius: 8px;
+      border: 1px solid #1e293b;
+    }
+
+    .btn-copy {
+      margin-top: 14px;
+      padding: 8px 16px;
+      background: rgba(56, 189, 248, 0.15);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      color: var(--accent);
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    .status-card {
+      text-align: center;
+      padding: 40px 20px;
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top-color: #fff;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div id="loadingView" class="status-card">
+      <div class="spinner" style="width: 36px; height: 36px; border-top-color: var(--primary);"></div>
+      <p style="margin-top: 16px; color: var(--text-muted);">Authenticating session...</p>
+    </div>
+
+    <div id="errorView" class="status-card" style="display: none;">
+      <div style="font-size: 48px; margin-bottom: 12px;">⚠️</div>
+      <h2 style="color: var(--danger); margin-bottom: 8px;">Access Restricted</h2>
+      <p id="errorMsg" style="color: var(--text-muted); font-size: 14px; line-height: 1.5;"></p>
+    </div>
+
+    <div id="mainView" style="display: none;">
+      <div class="header">
+        <div class="badge">✨ ATS 90%+ AI RESUME REWRITE</div>
+        <h1>Upgrade Your Resume For ATS</h1>
+        <p>Optimize your resume with high-impact keywords, clean ATS formatting, and strong action verbs tailored for global tech companies.</p>
+      </div>
+
+      <form id="rewriteForm">
+        <div class="form-group">
+          <label>Candidate Name & Target Role</label>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <input type="text" id="candidateName" class="form-control" placeholder="Jane Doe" required readonly>
+            <input type="text" id="targetRole" class="form-control" placeholder="Target Role (e.g. Senior Backend Engineer)" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>ATS Layout Template</label>
+          <select id="template" class="form-control">
+            <option value="silicon_valley">Silicon Valley ATS Standard (Recommended)</option>
+            <option value="modern_tech">Modern Technical Leader</option>
+            <option value="impact_metrics">High-Impact Metrics & Architecture</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Technical Skills & Keywords to Highlight</label>
+          <input type="text" id="skills" class="form-control" placeholder="e.g. Python, Docker, Kubernetes, AWS, Microservices" required>
+        </div>
+
+        <div class="form-group">
+          <label>Raw Resume / Experience Notes</label>
+          <textarea id="resumeText" class="form-control" placeholder="Paste your existing resume text or key career bullet points here..."></textarea>
+        </div>
+
+        <button type="submit" id="submitBtn" class="btn-submit">
+          Generate ATS 92% Optimized Resume
+        </button>
+      </form>
+
+      <div id="resultBox" class="result-box" style="display: none;">
+        <div class="score-banner">
+          <div>
+            <h3 style="font-size: 16px; font-weight: 700;">ATS Compatibility Score</h3>
+            <p style="font-size: 13px; color: var(--text-muted);">Passed Greenhouse, Lever & Ashby parser standards</p>
+          </div>
+          <div class="score-number" id="atsScore">92%</div>
+        </div>
+
+        <div class="preview-text" id="optimizedPreview"></div>
+
+        <div style="display: flex; gap: 10px; align-items: center;">
+          <button id="copyBtn" class="btn-copy">📋 Copy ATS Resume</button>
+          <span style="font-size: 12.5px; color: var(--success); font-weight: 600;">✅ Linked to WhatsHire 1-Click Auto-Applies</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token');
+
+    const loadingView = document.getElementById('loadingView');
+    const errorView = document.getElementById('errorView');
+    const errorMsg = document.getElementById('errorMsg');
+    const mainView = document.getElementById('mainView');
+    const rewriteForm = document.getElementById('rewriteForm');
+    const submitBtn = document.getElementById('submitBtn');
+    const resultBox = document.getElementById('resultBox');
+    const optimizedPreview = document.getElementById('optimizedPreview');
+    const copyBtn = document.getElementById('copyBtn');
+
+    async function init() {
+      if (!token) {
+        showError('Missing session token. Please type /addons or /profile in Telegram to access your account.');
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/profile?token=${encodeURIComponent(token)}`);
+        const data = await res.json();
+
+        if (!res.ok || !data.success) {
+          showError(data.error || 'Failed to authenticate session.');
+          return;
+        }
+
+        const user = data.user;
+        document.getElementById('candidateName').value = user.name || '';
+        document.getElementById('skills').value = (user.skills && user.skills.length > 0) ? user.skills.join(', ') : '';
+        if (user.role) document.getElementById('targetRole').value = user.role;
+
+        loadingView.style.display = 'none';
+        mainView.style.display = 'block';
+      } catch (err) {
+        showError('Network error while validating session.');
+      }
+    }
+
+    function showError(msg) {
+      loadingView.style.display = 'none';
+      mainView.style.display = 'none';
+      errorMsg.innerText = msg;
+      errorView.style.display = 'block';
+    }
+
+    rewriteForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<span class="spinner"></span> Generating ATS-Optimized Resume...';
+
+      const payload = {
+        token,
+        targetRole: document.getElementById('targetRole').value.trim(),
+        template: document.getElementById('template').value,
+        skills: document.getElementById('skills').value.split(',').map(s => s.trim()).filter(Boolean),
+        resumeText: document.getElementById('resumeText').value.trim(),
+      };
+
+      try {
+        const res = await fetch('/api/resume/rewrite', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+          optimizedPreview.innerText = data.rewrittenResume;
+          document.getElementById('atsScore').innerText = `${data.atsScore}%`;
+          resultBox.style.display = 'block';
+          submitBtn.disabled = false;
+          submitBtn.innerText = 'Regenerate Resume';
+        } else {
+          alert(data.error || 'Failed to generate resume.');
+          submitBtn.disabled = false;
+          submitBtn.innerText = 'Generate ATS 92% Optimized Resume';
+        }
+      } catch (err) {
+        alert('Network error while rewriting resume.');
+        submitBtn.disabled = false;
+        submitBtn.innerText = 'Generate ATS 92% Optimized Resume';
+      }
+    });
+
+    copyBtn.addEventListener('click', () => {
+      navigator.clipboard.writeText(optimizedPreview.innerText);
+      copyBtn.innerText = '✅ Copied to Clipboard!';
+      setTimeout(() => { copyBtn.innerText = '📋 Copy ATS Resume'; }, 2000);
+    });
+
+    init();
+  </script>
+</body>
+</html>
+

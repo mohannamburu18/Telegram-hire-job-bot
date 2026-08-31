@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WhatsHire — Plans & Pricing</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #0088cc;
+      --primary-hover: #0077b5;
+      --accent: #38bdf8;
+      --bg: #0b0f19;
+      --card-bg: #151e2e;
+      --card-border: #243247;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --success: #10b981;
+      --popular-glow: rgba(56, 189, 248, 0.25);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px;
+    }
+
+    .header {
+      text-align: center;
+      max-width: 700px;
+      margin-bottom: 48px;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 6px 16px;
+      background: rgba(0, 136, 204, 0.15);
+      color: var(--accent);
+      border-radius: 9999px;
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      border: 1px solid rgba(56, 189, 248, 0.3);
+    }
+
+    .header h1 {
+      font-size: 38px;
+      font-weight: 800;
+      letter-spacing: -1px;
+      margin-bottom: 14px;
+    }
+
+    .header p {
+      color: var(--text-muted);
+      font-size: 16px;
+      line-height: 1.6;
+    }
+
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 24px;
+      max-width: 1200px;
+      width: 100%;
+    }
+
+    @media (max-width: 1024px) {
+      .pricing-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 640px) {
+      .pricing-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .pricing-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 32px 24px;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .pricing-card:hover {
+      transform: translateY(-4px);
+    }
+
+    .pricing-card.popular {
+      border-color: var(--accent);
+      box-shadow: 0 0 30px var(--popular-glow);
+      background: linear-gradient(180deg, #182638 0%, #151e2e 100%);
+    }
+
+    .popular-tag {
+      position: absolute;
+      top: -12px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: linear-gradient(90deg, #0284c7, #38bdf8);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 4px 14px;
+      border-radius: 9999px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .plan-title {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .plan-desc {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 20px;
+      min-height: 38px;
+    }
+
+    .plan-price {
+      display: flex;
+      align-items: baseline;
+      gap: 4px;
+      margin-bottom: 24px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--card-border);
+    }
+
+    .currency {
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    .amount {
+      font-size: 36px;
+      font-weight: 800;
+      color: var(--text-main);
+    }
+
+    .period {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-left: 4px;
+    }
+
+    .features-list {
+      list-style: none;
+      margin-bottom: 30px;
+      flex-grow: 1;
+    }
+
+    .features-list li {
+      font-size: 13.5px;
+      color: #cbd5e1;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      line-height: 1.4;
+    }
+
+    .features-list li span.check {
+      color: var(--success);
+      font-weight: 800;
+    }
+
+    .btn-plan {
+      display: block;
+      width: 100%;
+      text-align: center;
+      padding: 12px 20px;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 14px;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+
+    .btn-outline {
+      background: transparent;
+      border: 1px solid var(--card-border);
+      color: var(--text-main);
+    }
+
+    .btn-outline:hover {
+      background: rgba(255, 255, 255, 0.05);
+      border-color: #475569;
+    }
+
+    .btn-solid {
+      background: linear-gradient(135deg, #0088cc, #0284c7);
+      border: none;
+      color: #fff;
+      box-shadow: 0 8px 16px -4px rgba(0, 136, 204, 0.4);
+    }
+
+    .btn-solid:hover {
+      background: linear-gradient(135deg, #0099e6, #0369a1);
+    }
+
+    .footer-notes {
+      margin-top: 48px;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 14px;
+      max-width: 600px;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="badge">⚡ LIVE VERIFIED TECH JOBS</div>
+    <h1>Automate Your Job Hunt</h1>
+    <p>Choose the right plan to auto-apply to Greenhouse, Lever, Ashby & global tech roles daily with 100% live verified jobs.</p>
+  </div>
+
+  <div class="pricing-grid">
+    <!-- FREE -->
+    <div class="pricing-card">
+      <h3 class="plan-title">FREE</h3>
+      <p class="plan-desc">Try out 1-click auto applications and explore live jobs.</p>
+      <div class="plan-price">
+        <span class="currency">₹</span>
+        <span class="amount">0</span>
+        <span class="period">/ lifetime</span>
+      </div>
+      <ul class="features-list">
+        <li><span class="check">✓</span> 3 Auto-Applications</li>
+        <li><span class="check">✓</span> 10 Manual Live Links</li>
+        <li><span class="check">✓</span> Greenhouse, Lever, Ashby live check</li>
+        <li><span class="check">✓</span> Standard speed</li>
+      </ul>
+      <a href="https://t.me/whatshire_support" class="btn-plan btn-outline">Current Free Tier</a>
+    </div>
+
+    <!-- STARTER -->
+    <div class="pricing-card">
+      <h3 class="plan-title">Starter</h3>
+      <p class="plan-desc">For active job seekers looking for steady daily outreach.</p>
+      <div class="plan-price">
+        <span class="currency">₹</span>
+        <span class="amount">249</span>
+        <span class="period">/ 30 days</span>
+      </div>
+      <ul class="features-list">
+        <li><span class="check">✓</span> <strong>20 Auto-Applies</strong></li>
+        <li><span class="check">✓</span> <strong>100 Live Job Links</strong></li>
+        <li><span class="check">✓</span> ~7 fresh jobs dripped daily</li>
+        <li><span class="check">✓</span> 20 Concurrency Live Check</li>
+        <li><span class="check">✓</span> 30-Day Expiry</li>
+      </ul>
+      <a href="https://t.me/whatshire_support" class="btn-plan btn-outline">Get Starter</a>
+    </div>
+
+    <!-- POPULAR -->
+    <div class="pricing-card popular">
+      <div class="popular-tag">Best Value ⭐</div>
+      <h3 class="plan-title" style="color: var(--accent);">Popular</h3>
+      <p class="plan-desc">Our most effective package for serious developers & tech professionals.</p>
+      <div class="plan-price">
+        <span class="currency">₹</span>
+        <span class="amount">471</span>
+        <span class="period">/ 60 days</span>
+      </div>
+      <ul class="features-list">
+        <li><span class="check">✓</span> <strong>100 Auto-Applies</strong></li>
+        <li><span class="check">✓</span> <strong>1,000 Live Job Links</strong></li>
+        <li><span class="check">✓</span> ~20 fresh jobs dripped daily</li>
+        <li><span class="check">✓</span> <strong>FREE Resume Rewrite</strong> (₹99 value)</li>
+        <li><span class="check">✓</span> <strong>Priority Auto-Apply</strong></li>
+        <li><span class="check">✓</span> 60-Day Expiry</li>
+      </ul>
+      <a href="https://t.me/whatshire_support" class="btn-plan btn-solid">Upgrade to Popular</a>
+    </div>
+
+    <!-- POWER -->
+    <div class="pricing-card">
+      <h3 class="plan-title">Power</h3>
+      <p class="plan-desc">Maximum coverage for fast-track career transitions.</p>
+      <div class="plan-price">
+        <span class="currency">₹</span>
+        <span class="amount">1,179</span>
+        <span class="period">/ 90 days</span>
+      </div>
+      <ul class="features-list">
+        <li><span class="check">✓</span> <strong>250 Auto-Applies</strong></li>
+        <li><span class="check">✓</span> <strong>2,500 Live Job Links</strong></li>
+        <li><span class="check">✓</span> ~28 fresh jobs dripped daily</li>
+        <li><span class="check">✓</span> <strong>Resume Rewrite + Priority</strong></li>
+        <li><span class="check">✓</span> 90-Day Full Access</li>
+        <li><span class="check">✓</span> Dedicated Telegram Support</li>
+      </ul>
+      <a href="https://t.me/whatshire_support" class="btn-plan btn-outline">Get Power</a>
+    </div>
+  </div>
+
+  <div class="footer-notes">
+    <p>💡 To activate instantly in Telegram: type <code>paid starter</code>, <code>paid popular</code>, or <code>paid power</code>.</p>
+  </div>
+</body>
+</html>
+

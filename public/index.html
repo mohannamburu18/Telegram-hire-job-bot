@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WhatsHire — Automated Telegram Job Bot SaaS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #0088cc;
+      --accent: #38bdf8;
+      --bg: #0b0f19;
+      --card-bg: #151e2e;
+      --card-border: #243247;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --success: #10b981;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .navbar {
+      width: 100%;
+      max-width: 1200px;
+      padding: 24px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo {
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .logo span {
+      color: var(--accent);
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 20px;
+      align-items: center;
+    }
+
+    .nav-link {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 600;
+      transition: color 0.2s;
+    }
+
+    .nav-link:hover {
+      color: var(--text-main);
+    }
+
+    .btn-telegram {
+      background: linear-gradient(135deg, #0088cc, #0284c7);
+      color: #fff;
+      padding: 10px 20px;
+      border-radius: 9999px;
+      font-weight: 700;
+      font-size: 14px;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 4px 14px rgba(0, 136, 204, 0.4);
+    }
+
+    .hero {
+      text-align: center;
+      max-width: 840px;
+      padding: 60px 20px 40px;
+    }
+
+    .badge-live {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 16px;
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--success);
+      border-radius: 9999px;
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 20px;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 8px var(--success);
+    }
+
+    .hero h1 {
+      font-size: 48px;
+      font-weight: 800;
+      line-height: 1.15;
+      letter-spacing: -1.5px;
+      margin-bottom: 20px;
+    }
+
+    .hero p {
+      font-size: 18px;
+      color: var(--text-muted);
+      line-height: 1.6;
+      margin-bottom: 32px;
+    }
+
+    .sources-row {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      flex-wrap: wrap;
+      margin-bottom: 60px;
+    }
+
+    .source-tag {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      padding: 8px 18px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #cbd5e1;
+    }
+
+    .section {
+      width: 100%;
+      max-width: 1200px;
+      padding: 40px 20px;
+    }
+
+    .section-title {
+      text-align: center;
+      margin-bottom: 36px;
+    }
+
+    .section-title h2 {
+      font-size: 32px;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+
+    .section-title p {
+      color: var(--text-muted);
+      font-size: 15px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+    }
+
+    @media (max-width: 900px) {
+      .grid-3 {
+        grid-template-columns: 1fr;
+      }
+      .hero h1 {
+        font-size: 34px;
+      }
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 18px;
+      padding: 28px 24px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .card-icon {
+      font-size: 32px;
+      margin-bottom: 16px;
+    }
+
+    .card h3 {
+      font-size: 19px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .card p {
+      color: var(--text-muted);
+      font-size: 13.5px;
+      line-height: 1.5;
+      margin-bottom: 20px;
+    }
+
+    .card-price {
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--accent);
+      margin-bottom: 16px;
+    }
+
+    .footer {
+      width: 100%;
+      border-top: 1px solid var(--card-border);
+      padding: 30px 20px;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 13px;
+      margin-top: 60px;
+    }
+  </style>
+</head>
+<body>
+  <div class="navbar">
+    <div class="logo">⚡ Whats<span>Hire</span></div>
+    <div class="nav-links">
+      <a href="/pay" class="nav-link">Plans</a>
+      <a href="#addons" class="nav-link">Add-Ons</a>
+      <a href="#referral" class="nav-link">Referrals</a>
+      <a href="/admin" id="adminNavBtn" class="nav-link" style="display: none; color: var(--gold); font-weight: 700;">👑 Admin</a>
+      <a href="https://t.me/whatshire_support" class="btn-telegram">Launch Telegram Bot 🤖</a>
+    </div>
+  </div>
+
+  <div class="hero">
+    <div class="badge-live">
+      <div class="dot"></div> 100% Live Verified Jobs (HEAD 200)
+    </div>
+    <h1>Automate Your Tech Job Applications Directly on Telegram</h1>
+    <p>Zero paid APIs. We parallel-crawl Greenhouse, Lever, Ashby, RemoteOK & Arbeitnow with 20 concurrency and auto-apply on your behalf.</p>
+    
+    <div class="sources-row">
+      <div class="source-tag">🏢 Greenhouse (80 Boards)</div>
+      <div class="source-tag">⚡ Lever (40 Boards)</div>
+      <div class="source-tag">🚀 Ashby GraphQL</div>
+      <div class="source-tag">🌐 RemoteOK API</div>
+      <div class="source-tag">🇪🇺 Arbeitnow Global</div>
+    </div>
+  </div>
+
+  <div class="section" id="addons">
+    <div class="section-title">
+      <h2>🛒 WhatsHire Add-Ons Store</h2>
+      <p>High-value services to supercharge your hiring pipeline.</p>
+    </div>
+
+    <div class="grid-3">
+      <div class="card">
+        <div>
+          <div class="card-icon">📄</div>
+          <h3>Resume Rewrite ATS 90%</h3>
+          <p>AI rewrite to boost your ATS parse rate to 92%+ with target role keyword matching. (Included free in Popular & Power plans).</p>
+        </div>
+        <div>
+          <div class="card-price">₹99 <span style="font-size: 13px; color: var(--text-muted); font-weight: 500;">one-time</span></div>
+          <a href="/pay" class="nav-link" style="color: var(--accent); font-weight: 700;">Explore In Bot →</a>
+        </div>
+      </div>
+
+      <div class="card">
+        <div>
+          <div class="card-icon">⚡</div>
+          <h3>Priority Apply</h3>
+          <p>Your daily applications are dispatched in the first batch at 8:30 AM before standard users, ensuring top recruiter visibility.</p>
+        </div>
+        <div>
+          <div class="card-price">₹79 <span style="font-size: 13px; color: var(--text-muted); font-weight: 500;">/ month</span></div>
+          <a href="/pay" class="nav-link" style="color: var(--accent); font-weight: 700;">Explore In Bot →</a>
+        </div>
+      </div>
+
+      <div class="card">
+        <div>
+          <div class="card-icon">🌍</div>
+          <h3>Country Pack (US/EU/Global)</h3>
+          <p>Unlocks custom regional remote filtering: "Remote US", "Remote EU", and "Worldwide" across all live sources.</p>
+        </div>
+        <div>
+          <div class="card-price">₹200 <span style="font-size: 13px; color: var(--text-muted); font-weight: 500;">one-time</span></div>
+          <a href="/pay" class="nav-link" style="color: var(--accent); font-weight: 700;">Explore In Bot →</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="referral" style="text-align: center;">
+    <div class="card" style="max-width: 700px; margin: auto; padding: 40px;">
+      <h2 style="font-size: 26px; margin-bottom: 12px;">🎁 Invite Friends & Earn Free Applications</h2>
+      <p style="margin-bottom: 24px;">When your friend joins via your referral link, they get <strong>+2 Auto-Applies</strong>. When they buy any plan, you get <strong>+7 Auto-Applies + 50 Live Links</strong> instantly!</p>
+      <a href="https://t.me/whatshire_support" class="btn-telegram" style="margin: auto;">Get Your Referral Link in Bot</a>
+    </div>
+  </div>
+
+  <div class="footer">
+    <p>© 2026 WhatsHire SaaS. All jobs live verified with HEAD/GET 200 within 10 days of posting.</p>
+  </div>
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    if (params.has('admin') || params.has('secret')) {
+      const btn = document.getElementById('adminNavBtn');
+      if (btn) {
+        btn.style.display = 'inline-block';
+        if (params.has('secret')) {
+          btn.href = `/admin?secret=${encodeURIComponent(params.get('secret'))}`;
+        }
+      }
+    }
+  </script>
+</body>
+</html>
+

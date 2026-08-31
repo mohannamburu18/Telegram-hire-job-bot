@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WhatsHire — Executive Admin & God Mode Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0b0f19;
+      --card-bg: #121a2b;
+      --card-border: #1e2a44;
+      --text-main: #ffffff;
+      --text-muted: #8fa0bc;
+      --accent: #2a7fff;
+      --accent-hover: #1b68e3;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --gold: #facc15;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Top Navigation */
+    .navbar {
+      background: #080c14;
+      border-bottom: 1px solid var(--card-border);
+      padding: 16px 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .brand {
+      font-size: 20px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand span.badge {
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      color: #000;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 3px 8px;
+      border-radius: 6px;
+      text-transform: uppercase;
+    }
+
+    .nav-tabs {
+      display: flex;
+      gap: 8px;
+    }
+
+    .tab-btn {
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--text-muted);
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 13.5px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .tab-btn:hover, .tab-btn.active {
+      background: var(--card-bg);
+      border-color: var(--card-border);
+      color: var(--text-main);
+    }
+
+    .btn-logout {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: var(--danger);
+      padding: 7px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    /* Main Container */
+    .container {
+      max-width: 1400px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 28px 24px;
+      flex-grow: 1;
+    }
+
+    /* Cards Grid */
+    .grid-metrics {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 18px;
+      margin-bottom: 28px;
+    }
+
+    .metric-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 20px;
+      position: relative;
+    }
+
+    .metric-title {
+      font-size: 12.5px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 10px;
+    }
+
+    .metric-value {
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+    }
+
+    .metric-sub {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 6px;
+    }
+
+    /* Table Sections */
+    .section-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 28px;
+    }
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 14px;
+    }
+
+    .section-title {
+      font-size: 18px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .controls-row {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .input-search, .select-filter {
+      background: #080c14;
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      color: var(--text-main);
+      padding: 8px 14px;
+      font-size: 13.5px;
+      outline: none;
+    }
+
+    .input-search:focus, .select-filter:focus {
+      border-color: var(--accent);
+    }
+
+    .btn-action {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .btn-action:hover {
+      background: var(--accent-hover);
+    }
+
+    /* Data Tables */
+    .table-responsive {
+      width: 100%;
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 13px;
+    }
+
+    th {
+      background: #080c14;
+      color: var(--text-muted);
+      font-weight: 600;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--card-border);
+      text-transform: uppercase;
+      font-size: 11.5px;
+      letter-spacing: 0.5px;
+    }
+
+    td {
+      padding: 14px;
+      border-bottom: 1px solid #162035;
+      color: #d1d5db;
+    }
+
+    tr:hover td {
+      background: rgba(42, 127, 255, 0.04);
+    }
+
+    .badge-plan {
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      display: inline-block;
+    }
+
+    .plan-free { background: #334155; color: #cbd5e1; }
+    .plan-starter { background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); }
+    .plan-popular { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+    .plan-power { background: rgba(168, 85, 247, 0.2); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.4); }
+
+    .tag-banned {
+      background: rgba(239, 68, 68, 0.2);
+      color: var(--danger);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 700;
+      margin-left: 4px;
+    }
+
+    /* Action Buttons in table */
+    .btn-group-table {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .btn-sm {
+      padding: 5px 10px;
+      border-radius: 6px;
+      font-size: 11.5px;
+      font-weight: 600;
+      border: 1px solid var(--card-border);
+      background: #080c14;
+      color: #fff;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .btn-sm:hover {
+      border-color: var(--accent);
+      background: var(--card-bg);
+    }
+
+    .btn-god {
+      background: linear-gradient(135deg, #d97706, #b45309);
+      border: none;
+      color: #fff;
+      font-weight: 700;
+    }
+
+    .btn-god:hover {
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+    }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 20px;
+    }
+
+    .modal-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 28px;
+      width: 100%;
+      max-width: 580px;
+      box-shadow: 0 25px 50px -12px rgba(0,0,0,0.7);
+    }
+
+    .code-block {
+      background: #080c14;
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 14px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: #a5f3fc;
+      max-height: 350px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      margin: 16px 0;
+    }
+
+    /* Secret Login Overlay */
+    #loginOverlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: var(--bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+      padding: 20px;
+    }
+  </style>
+</head>
+<body>
+  <!-- Secret Login Screen -->
+  <div id="loginOverlay" style="display: none;">
+    <div class="modal-card" style="max-width: 440px; text-align: center;">
+      <div style="font-size: 48px; margin-bottom: 12px;">👑</div>
+      <h2 style="font-size: 22px; font-weight: 800; margin-bottom: 8px;">WhatsHire Admin Access</h2>
+      <p style="color: var(--text-muted); font-size: 13.5px; margin-bottom: 24px;">Enter your master admin secret key to proceed to God Mode dashboard.</p>
+      
+      <form id="loginForm">
+        <input type="password" id="secretInput" class="input-search" style="width: 100%; padding: 12px; margin-bottom: 16px; font-size: 14px;" placeholder="Admin Secret Key" required autofocus>
+        <button type="submit" class="btn-action" style="width: 100%; padding: 12px; font-size: 14px; font-weight: 700;">Authenticate & Unlock Dashboard</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Top Navigation -->
+  <header class="navbar">
+    <div class="brand">
+      ⚡ WhatsHire <span class="badge">👑 Master Admin</span>
+    </div>
+    <div class="nav-tabs">
+      <button class="tab-btn active" onclick="switchTab('dashboardTab')">📊 Dashboard</button>
+      <button class="tab-btn" onclick="switchTab('usersTab')">👥 Users & God Mode</button>
+      <button class="tab-btn" onclick="switchTab('liveJobsTab')">📡 Live Jobs Tester</button>
+    </div>
+    <div>
+      <button class="btn-logout" onclick="logout()">Log Out</button>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- TAB 1: DASHBOARD OVERVIEW -->
+    <div id="dashboardTab">
+      <!-- 6 Metrics Cards -->
+      <div class="grid-metrics">
+        <div class="metric-card">
+          <div class="metric-title">Total Users</div>
+          <div class="metric-value" id="statTotalUsers">...</div>
+          <div class="metric-sub">Registered across bot & web</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-title">Paid Subscribers</div>
+          <div class="metric-value" id="statPaidUsers" style="color: var(--accent);">...</div>
+          <div class="metric-sub" id="statPaidPercent">... % conversion</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-title">Free Trial Users</div>
+          <div class="metric-value" id="statFreeUsers">...</div>
+          <div class="metric-sub">Lifetime trial candidates</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-title">Estimated Revenue</div>
+          <div class="metric-value" id="statRevenue" style="color: var(--success);">₹...</div>
+          <div class="metric-sub">Plans + Add-on purchases</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-title">Auto-Applies Done</div>
+          <div class="metric-value" id="statTotalApps" style="color: var(--gold);">...</div>
+          <div class="metric-sub">Submissions across 5 ATS sources</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-title">Today's Signups / Paid</div>
+          <div class="metric-value" id="statToday">... / ...</div>
+          <div class="metric-sub">Active acquisition in last 24h</div>
+        </div>
+      </div>
+
+      <!-- Plans Breakdown -->
+      <div class="section-card">
+        <div class="section-header">
+          <div class="section-title">📦 Plans & Subscription Breakdown</div>
+        </div>
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>Plan Tier</th>
+                <th>Active Subscribers</th>
+                <th>Price (₹)</th>
+                <th>Total Volume (₹)</th>
+              </tr>
+            </thead>
+            <tbody id="plansTableBody">
+              <!-- Dynamically rendered -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: USERS & GOD MODE MANAGEMENT -->
+    <div id="usersTab" style="display: none;">
+      <div class="section-card">
+        <div class="section-header">
+          <div class="section-title">
+            👥 Candidate Directory & God Mode
+            <span id="userCountBadge" style="font-size: 13px; color: var(--text-muted); font-weight: 500;">(0 users)</span>
+          </div>
+          <div class="controls-row">
+            <input type="text" id="userSearchInput" class="input-search" placeholder="🔍 Search ID, Name, Email, Role..." style="min-width: 260px;">
+            <select id="planFilterSelect" class="select-filter">
+              <option value="all">All Plans</option>
+              <option value="free">Free</option>
+              <option value="starter">Starter</option>
+              <option value="popular">Popular ⭐</option>
+              <option value="power">Power</option>
+            </select>
+            <button class="btn-action" onclick="fetchUsers()">Search</button>
+            <button class="btn-action" style="background: #080c14; border: 1px solid var(--card-border);" onclick="exportUsersCSV()">📥 Export CSV</button>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>Telegram ID</th>
+                <th>Candidate</th>
+                <th>Plan & Status</th>
+                <th>Auto Quota</th>
+                <th>Manual Links</th>
+                <th>Role & Location</th>
+                <th>Referrals</th>
+                <th>Joined</th>
+                <th>God Mode Actions</th>
+              </tr>
+            </thead>
+            <tbody id="usersTableBody">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: LIVE JOBS TESTER -->
+    <div id="liveJobsTab" style="display: none;">
+      <div class="section-card">
+        <div class="section-header">
+          <div class="section-title">📡 Real-Time ATS Live Jobs Verification Engine</div>
+        </div>
+        <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 20px;">Test the live crawler across Greenhouse, Lever, Ashby, RemoteOK, and Arbeitnow with concurrency 20 HTTP HEAD 200 checks.</p>
+        
+        <div class="controls-row" style="margin-bottom: 24px;">
+          <input type="text" id="jobRoleInput" class="input-search" placeholder="Role (e.g. Software Engineer, Python)" value="Software Engineer" style="min-width: 250px;">
+          <input type="text" id="jobLocInput" class="input-search" placeholder="Location (e.g. Bangalore, Remote US)" value="Remote" style="min-width: 220px;">
+          <button id="testJobsBtn" class="btn-action" onclick="testLiveJobs()">⚡ Test Live Crawl</button>
+        </div>
+
+        <div id="jobTestStatus" style="display: none; padding: 14px; background: #080c14; border-radius: 8px; margin-bottom: 20px; font-size: 13.5px;"></div>
+
+        <div id="jobsResultsList" style="display: flex; flex-direction: column; gap: 12px;"></div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Profile JSON Modal -->
+  <div id="profileModal" class="modal-overlay" style="display: none;">
+    <div class="modal-card">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h3 style="font-size: 17px; font-weight: 700;">Candidate Full Profile Record</h3>
+        <button onclick="closeModal()" style="background: none; border: none; color: #fff; font-size: 20px; cursor: pointer;">×</button>
+      </div>
+      <div class="code-block" id="modalJsonContent"></div>
+      <button class="btn-action" style="width: 100%;" onclick="closeModal()">Close</button>
+    </div>
+  </div>
+
+  <script>
+    let currentSecret = new URLSearchParams(window.location.search).get('secret');
+    let loadedUsers = [];
+
+    function init() {
+      if (!currentSecret) {
+        document.getElementById('loginOverlay').style.display = 'flex';
+        return;
+      }
+      loadDashboardStats();
+      fetchUsers();
+      // Auto-refresh stats every 30 seconds
+      setInterval(loadDashboardStats, 30000);
+    }
+
+    document.getElementById('loginForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const val = document.getElementById('secretInput').value.trim();
+      if (val) {
+        window.location.href = `/admin?secret=${encodeURIComponent(val)}`;
+      }
+    });
+
+    function logout() {
+      window.location.href = '/admin';
+    }
+
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('[id$="Tab"]').forEach(tab => tab.style.display = 'none');
+
+      document.getElementById(tabId).style.display = 'block';
+      event.target.classList.add('active');
+    }
+
+    async function apiFetch(endpoint, options = {}) {
+      const url = new URL(endpoint, window.location.origin);
+      url.searchParams.set('secret', currentSecret);
+
+      const headers = {
+        'x-admin-secret': currentSecret,
+        ...(options.headers || {}),
+      };
+
+      const res = await fetch(url.toString(), { ...options, headers });
+      if (res.status === 401) {
+        alert('Invalid or expired Admin Secret. Please log in again.');
+        window.location.href = '/admin';
+        throw new Error('Unauthorized');
+      }
+      return res.json();
+    }
+
+    async function loadDashboardStats() {
+      try {
+        const data = await apiFetch('/api/admin/stats');
+        if (!data.success) return;
+
+        document.getElementById('statTotalUsers').innerText = data.total_users;
+        document.getElementById('statPaidUsers').innerText = data.paid_users;
+        
+        const paidPercent = data.total_users > 0 ? ((data.paid_users / data.total_users) * 100).toFixed(1) : 0;
+        document.getElementById('statPaidPercent').innerText = `${paidPercent}% conversion rate`;
+        
+        document.getElementById('statFreeUsers').innerText = data.free_users;
+        document.getElementById('statRevenue').innerText = `₹${data.revenue_estimated.toLocaleString('en-IN')}`;
+        document.getElementById('statTotalApps').innerText = data.total_applications;
+        document.getElementById('statToday').innerText = `${data.today_signups} / ${data.today_paid}`;
+
+        // Render plans breakdown
+        const tbody = document.getElementById('plansTableBody');
+        tbody.innerHTML = '';
+        data.plans_breakdown.forEach(item => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td><span class="badge-plan plan-${item.plan}">${item.name}</span></td>
+            <td><strong>${item.count}</strong></td>
+            <td>₹${item.price}</td>
+            <td><strong>₹${(item.revenue || 0).toLocaleString('en-IN')}</strong></td>
+          `;
+          tbody.appendChild(tr);
+        });
+      } catch (err) {
+        console.error('Failed to load stats:', err);
+      }
+    }
+
+    async function fetchUsers() {
+      try {
+        const search = document.getElementById('userSearchInput').value.trim();
+        const plan = document.getElementById('planFilterSelect').value;
+
+        const data = await apiFetch(`/api/admin/users?search=${encodeURIComponent(search)}&plan=${encodeURIComponent(plan)}`);
+        if (!data.success) return;
+
+        loadedUsers = data.users || [];
+        document.getElementById('userCountBadge').innerText = `(${loadedUsers.length} users)`;
+        renderUsersTable(loadedUsers);
+      } catch (err) {
+        console.error('Failed to fetch users:', err);
+      }
+    }
+
+    function renderUsersTable(users) {
+      const tbody = document.getElementById('usersTableBody');
+      tbody.innerHTML = '';
+
+      if (users.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: var(--text-muted); padding: 30px;">No candidates found matching criteria.</td></tr>`;
+        return;
+      }
+
+      users.forEach(u => {
+        const tr = document.createElement('tr');
+        const isUnlimited = u.trial_applications_used < -1000;
+        const autoDisplay = isUnlimited ? '👑 Unlimited' : `${u.trial_applications_used}`;
+        const linksDisplay = isUnlimited ? '👑 Unlimited' : `${u.trial_links_used}`;
+        const dateStr = u.createdAt ? new Date(u.createdAt).toLocaleDateString() : 'Recent';
+
+        tr.innerHTML = `
+          <td><code>${u.telegram_id}</code></td>
+          <td>
+            <strong>${u.name || 'Anonymous'}</strong> ${u.is_banned ? '<span class="tag-banned">BANNED</span>' : ''}
+            <div style="font-size: 12px; color: var(--text-muted);">${u.email || 'No email verified'}</div>
+          </td>
+          <td>
+            <span class="badge-plan plan-${u.plan || 'free'}">${(u.plan || 'free').toUpperCase()}</span>
+          </td>
+          <td>${autoDisplay}</td>
+          <td>${linksDisplay}</td>
+          <td>
+            <div style="font-weight: 600;">${u.role || 'Unspecified'}</div>
+            <div style="font-size: 12px; color: var(--text-muted);">${u.location || 'Remote'}</div>
+          </td>
+          <td>
+            <code>${u.referral_code || '---'}</code> (${u.referrals_count || 0})
+          </td>
+          <td>${dateStr}</td>
+          <td>
+            <div class="btn-group-table">
+              <button class="btn-sm btn-god" onclick="performAction(${u.telegram_id}, 'make_unlimited')">👑 Unlimited</button>
+              <button class="btn-sm" onclick="performAction(${u.telegram_id}, 'add_auto', { amount: 50 })">+50 Auto</button>
+              <button class="btn-sm" onclick="performAction(${u.telegram_id}, 'activate_plan', { plan: 'popular' })">⭐ Popular</button>
+              <button class="btn-sm" onclick="${u.is_banned ? `performAction(${u.telegram_id}, 'unban')` : `performAction(${u.telegram_id}, 'ban')`}" style="color: ${u.is_banned ? 'var(--success)' : 'var(--danger)'};">
+                ${u.is_banned ? 'Unban' : 'Ban'}
+              </button>
+              <button class="btn-sm" onclick="viewJson(${u.telegram_id})">JSON</button>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    async function performAction(telegram_id, action, extra = {}) {
+      if (!confirm(`Are you sure you want to perform "${action}" on Telegram ID ${telegram_id}?`)) return;
+
+      try {
+        const res = await apiFetch('/api/admin/action', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ telegram_id, action, ...extra }),
+        });
+
+        if (res.success) {
+          alert(`✅ ${res.message}`);
+          fetchUsers();
+          loadDashboardStats();
+        } else {
+          alert(`❌ Error: ${res.error}`);
+        }
+      } catch (err) {
+        alert(`Action failed: ${err.message}`);
+      }
+    }
+
+    function viewJson(telegram_id) {
+      const u = loadedUsers.find(user => user.telegram_id === telegram_id);
+      if (!u) return;
+      document.getElementById('modalJsonContent').innerText = JSON.stringify(u, null, 2);
+      document.getElementById('profileModal').style.display = 'flex';
+    }
+
+    function closeModal() {
+      document.getElementById('profileModal').style.display = 'none';
+    }
+
+    function exportUsersCSV() {
+      if (loadedUsers.length === 0) {
+        alert('No users to export.');
+        return;
+      }
+
+      const headers = ['Telegram_ID', 'Name', 'Email', 'Phone', 'Plan', 'Is_Paid', 'Auto_Applies_Used', 'Manual_Links_Used', 'Role', 'Location', 'Referral_Code', 'Referrals_Count', 'Joined_Date'];
+      const rows = loadedUsers.map(u => [
+        u.telegram_id,
+        `"${(u.name || '').replace(/"/g, '""')}"`,
+        `"${(u.email || '').replace(/"/g, '""')}"`,
+        `"${(u.phone || '').replace(/"/g, '""')}"`,
+        u.plan,
+        u.is_paid,
+        u.trial_applications_used,
+        u.trial_links_used,
+        `"${(u.role || '').replace(/"/g, '""')}"`,
+        `"${(u.location || '').replace(/"/g, '""')}"`,
+        u.referral_code,
+        u.referrals_count,
+        u.createdAt
+      ]);
+
+      const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement('a');
+      link.setAttribute('href', encodedUri);
+      link.setAttribute('download', `whatshire_users_${new Date().toISOString().slice(0, 10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    async function testLiveJobs() {
+      const role = document.getElementById('jobRoleInput').value.trim();
+      const location = document.getElementById('jobLocInput').value.trim();
+      const btn = document.getElementById('testJobsBtn');
+      const statusBox = document.getElementById('jobTestStatus');
+      const resultsContainer = document.getElementById('jobsResultsList');
+
+      btn.disabled = true;
+      btn.innerText = '⏳ Crawling 5 Sources...';
+      statusBox.style.display = 'block';
+      statusBox.innerText = `🔍 Parallel querying Greenhouse (80 boards), Lever (40), Ashby GraphQL, RemoteOK, and Arbeitnow for "${role}" in "${location}" with 20 concurrency live checks...`;
+      resultsContainer.innerHTML = '';
+
+      try {
+        const data = await apiFetch(`/api/admin/jobs/live?role=${encodeURIComponent(role)}&location=${encodeURIComponent(location)}`);
+        btn.disabled = false;
+        btn.innerText = '⚡ Test Live Crawl';
+
+        if (data.success) {
+          statusBox.innerHTML = `✅ <strong>Found ${data.count} Live Verified Postings (HEAD 200)</strong> within the last 10 days for <em>${role}</em> in <em>${location}</em>.`;
+
+          data.jobs.slice(0, 10).forEach((job, idx) => {
+            const card = document.createElement('div');
+            card.style = 'background: #080c14; border: 1px solid var(--card-border); border-radius: 10px; padding: 14px;';
+            card.innerHTML = `
+              <div style="font-weight: 700; font-size: 14.5px;">${idx + 1}. ${job.title} @ <span style="color: var(--accent);">${job.company}</span></div>
+              <div style="font-size: 12.5px; color: var(--text-muted); margin: 4px 0;">📍 ${job.location} | Source: <strong>${job.source}</strong> | Posted: ${job.posted_date?.slice(0, 10) || 'Recent'}</div>
+              <a href="${job.job_url}" target="_blank" style="color: var(--accent); font-size: 12.5px; word-break: break-all;">🔗 ${job.job_url}</a>
+            `;
+            resultsContainer.appendChild(card);
+          });
+        } else {
+          statusBox.innerText = `❌ Error: ${data.error}`;
+        }
+      } catch (err) {
+        btn.disabled = false;
+        btn.innerText = '⚡ Test Live Crawl';
+        statusBox.innerText = `❌ Request failed: ${err.message}`;
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>
+

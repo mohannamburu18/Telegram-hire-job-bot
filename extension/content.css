@@ -1,0 +1,183 @@
+/* WhatsHire Safe Filler - Injected Styles */
+
+#whatshire-floating-banner {
+  position: fixed;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2147483647;
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  color: #f8fafc;
+  border: 1px solid #3b82f6;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.6), 0 8px 10px -6px rgba(59, 130, 246, 0.4);
+  border-radius: 12px;
+  padding: 10px 18px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 13px;
+  max-width: 90%;
+  animation: whSlideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.wh-banner-content {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  justify-content: space-between;
+}
+
+.wh-banner-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.wh-logo-badge {
+  background: #2563eb;
+  color: #fff;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  letter-spacing: 0.5px;
+}
+
+.wh-banner-text {
+  color: #e2e8f0;
+}
+
+.wh-banner-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.wh-btn-primary {
+  background: #3b82f6;
+  color: #fff;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.wh-btn-primary:hover {
+  background: #2563eb;
+  transform: translateY(-1px);
+}
+
+.wh-btn-ghost {
+  background: transparent;
+  color: #94a3b8;
+  border: none;
+  font-size: 14px;
+  padding: 4px 8px;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.wh-btn-ghost:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Toast Notification */
+#whatshire-toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 2147483647;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-family: -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+  display: none;
+  max-width: 380px;
+}
+
+.wh-toast-info { background: #1e293b; color: #38bdf8; border: 1px solid #0284c7; }
+.wh-toast-warning { background: #451a03; color: #fdba74; border: 1px solid #d97706; }
+.wh-toast-error { background: #450a0a; color: #fca5a5; border: 1px solid #dc2626; }
+
+/* Success Modal */
+.wh-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(4px);
+  z-index: 2147483647;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.wh-modal-card {
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 16px;
+  padding: 24px;
+  width: 420px;
+  color: #f8fafc;
+  font-family: -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+}
+
+.wh-modal-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.wh-modal-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.wh-modal-body {
+  font-size: 13px;
+  line-height: 1.6;
+  color: #cbd5e1;
+  margin: 0 0 20px 0;
+}
+
+.wh-badge-safety {
+  display: inline-block;
+  background: #064e3b;
+  color: #6ee7b7;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  border: 1px solid #059669;
+}
+
+.wh-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid #1e293b;
+  padding-top: 16px;
+}
+
+.wh-modal-stats {
+  display: flex;
+  flex-direction: column;
+  font-size: 11px;
+  color: #94a3b8;
+  gap: 3px;
+}
+
+@keyframes whSlideDown {
+  from { opacity: 0; transform: translate(-50%, -20px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+

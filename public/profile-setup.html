@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WhatsHire — Candidate Profile Setup</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #0088cc;
+      --primary-hover: #0077b5;
+      --primary-light: #e6f4fa;
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --card-border: #334155;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --input-bg: #0f172a;
+      --input-border: #334155;
+      --input-focus: #38bdf8;
+      --success: #10b981;
+      --danger: #ef4444;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 640px;
+      background-color: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+      padding: 36px 32px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .container::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 6px;
+      background: linear-gradient(90deg, #0088cc, #38bdf8, #818cf8);
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+
+    .logo-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--primary-light);
+      color: var(--primary);
+      font-weight: 700;
+      font-size: 13px;
+      padding: 6px 14px;
+      border-radius: 9999px;
+      margin-bottom: 12px;
+    }
+
+    .header h1 {
+      font-size: 26px;
+      font-weight: 800;
+      color: var(--text-main);
+      margin-bottom: 8px;
+      letter-spacing: -0.5px;
+    }
+
+    .header p {
+      font-size: 14px;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    @media (max-width: 580px) {
+      .grid-2 {
+        grid-template-columns: 1fr;
+      }
+      .container {
+        padding: 24px 18px;
+      }
+    }
+
+    .form-group {
+      margin-bottom: 18px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-main);
+      margin-bottom: 6px;
+    }
+
+    .form-group label span {
+      color: var(--danger);
+    }
+
+    .form-control {
+      width: 100%;
+      background-color: var(--input-bg);
+      border: 1px solid var(--input-border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      color: var(--text-main);
+      font-size: 14px;
+      transition: all 0.2s ease;
+      outline: none;
+    }
+
+    .form-control:focus {
+      border-color: var(--input-focus);
+      box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15);
+    }
+
+    .form-control::placeholder {
+      color: #64748b;
+    }
+
+    select.form-control {
+      cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+      background-repeat: no-repeat;
+      background-position: right 14px center;
+      background-size: 16px;
+    }
+
+    .btn-submit {
+      width: 100%;
+      background: linear-gradient(135deg, #0088cc, #0284c7);
+      color: #ffffff;
+      border: none;
+      border-radius: 12px;
+      padding: 14px 20px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 10px 20px -5px rgba(0, 136, 204, 0.4);
+      transition: all 0.2s ease;
+      margin-top: 10px;
+    }
+
+    .btn-submit:hover {
+      background: linear-gradient(135deg, #0099e6, #0369a1);
+      transform: translateY(-1px);
+    }
+
+    .btn-submit:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .status-card {
+      text-align: center;
+      padding: 40px 20px;
+    }
+
+    .status-icon {
+      font-size: 54px;
+      margin-bottom: 16px;
+    }
+
+    .status-title {
+      font-size: 22px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .status-desc {
+      font-size: 14px;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    .token-badge {
+      display: inline-block;
+      margin-top: 15px;
+      padding: 8px 16px;
+      background: rgba(16, 185, 129, 0.1);
+      color: var(--success);
+      border: 1px solid rgba(16, 185, 129, 0.2);
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top-color: #fff;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div id="loadingView" class="status-card">
+      <div class="spinner" style="width: 40px; height: 40px; border-width: 4px; border-top-color: var(--primary);"></div>
+      <p style="margin-top: 16px; color: var(--text-muted);">Verifying your secure session...</p>
+    </div>
+
+    <div id="errorView" class="status-card" style="display: none;">
+      <div class="status-icon">⚠️</div>
+      <h2 class="status-title" style="color: var(--danger);">Invalid or Expired Link</h2>
+      <p id="errorMessage" class="status-desc">This profile setup link is invalid or has expired (valid for 20 minutes). Please type /start in Telegram to generate a new session.</p>
+    </div>
+
+    <div id="successView" class="status-card" style="display: none;">
+      <div class="status-icon">🎉</div>
+      <h2 class="status-title" style="color: var(--success);">Profile Completed!</h2>
+      <p class="status-desc">Your profile is 100% saved and will be automatically attached to every job application.</p>
+      <div class="token-badge">✅ Saved for 1-Click Applications</div>
+      <p style="margin-top: 24px; font-size: 15px; font-weight: 600; color: var(--text-main);">👉 Return to Telegram and type <code>done</code> to start searching live jobs!</p>
+    </div>
+
+    <div id="formView" style="display: none;">
+      <div class="header">
+        <div class="logo-badge">⚡ WhatsHire Auto-Apply</div>
+        <h1>Complete Your 1-Click Profile</h1>
+        <p>Fill this once. We use these details to auto-apply to Greenhouse, Lever, Ashby & global tech roles for you.</p>
+      </div>
+
+      <form id="profileForm">
+        <div class="grid-2">
+          <div class="form-group">
+            <label>Full Name</label>
+            <input type="text" id="name" class="form-control" placeholder="Jane Doe" required readonly>
+          </div>
+          <div class="form-group">
+            <label>Verified Email</label>
+            <input type="email" id="email" class="form-control" placeholder="jane@example.com" required readonly>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="form-group">
+            <label>Phone Number <span>*</span></label>
+            <input type="tel" id="phone" class="form-control" placeholder="+91 9876543210" required>
+          </div>
+          <div class="form-group">
+            <label>Years of Experience <span>*</span></label>
+            <select id="experience_years" class="form-control" required>
+              <option value="">Select experience</option>
+              <option value="0-1">Fresher / < 1 year</option>
+              <option value="1-3">1 - 3 years</option>
+              <option value="3-5">3 - 5 years</option>
+              <option value="5-8">5 - 8 years</option>
+              <option value="8+">8+ years</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="form-group">
+            <label>Current Location <span>*</span></label>
+            <input type="text" id="current_location" class="form-control" placeholder="e.g. Bangalore, India" required>
+          </div>
+          <div class="form-group">
+            <label>Preferred Locations</label>
+            <input type="text" id="preferred_locations" class="form-control" placeholder="e.g. Remote, Bangalore, Hyderabad">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Primary Skills (Comma separated) <span>*</span></label>
+          <input type="text" id="skills" class="form-control" placeholder="e.g. React, Node.js, Python, AWS, Docker" required>
+        </div>
+
+        <div class="grid-2">
+          <div class="form-group">
+            <label>Highest Education <span>*</span></label>
+            <input type="text" id="education" class="form-control" placeholder="e.g. B.Tech in CS / MCA" required>
+          </div>
+          <div class="form-group">
+            <label>Notice Period <span>*</span></label>
+            <select id="notice_period" class="form-control" required>
+              <option value="">Select notice period</option>
+              <option value="Immediate">Immediate Joiner</option>
+              <option value="15 Days">15 Days</option>
+              <option value="30 Days">30 Days (1 Month)</option>
+              <option value="60 Days">60 Days (2 Months)</option>
+              <option value="90 Days">90 Days (3 Months)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="form-group">
+            <label>Expected CTC / Salary <span>*</span></label>
+            <input type="text" id="expected_salary" class="form-control" placeholder="e.g. ₹18 LPA or $90k/yr" required>
+          </div>
+          <div class="form-group">
+            <label>LinkedIn Profile URL <span>*</span></label>
+            <input type="url" id="linkedin" class="form-control" placeholder="https://linkedin.com/in/username" required>
+          </div>
+        </div>
+
+        <button type="submit" id="submitBtn" class="btn-submit">
+          <span>Save Profile & Start Auto-Applying</span>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token');
+
+    const loadingView = document.getElementById('loadingView');
+    const errorView = document.getElementById('errorView');
+    const successView = document.getElementById('successView');
+    const formView = document.getElementById('formView');
+    const errorMessage = document.getElementById('errorMessage');
+    const profileForm = document.getElementById('profileForm');
+    const submitBtn = document.getElementById('submitBtn');
+
+    async function init() {
+      if (!token) {
+        showError('No profile verification token provided in URL.');
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/profile?token=${encodeURIComponent(token)}`);
+        const data = await res.json();
+
+        if (!res.ok || !data.success) {
+          showError(data.error || 'Failed to authenticate profile token.');
+          return;
+        }
+
+        const user = data.user;
+        document.getElementById('name').value = user.name || '';
+        document.getElementById('email').value = user.email || '';
+        document.getElementById('phone').value = user.phone || '';
+        document.getElementById('skills').value = (user.skills && user.skills.length > 0) ? user.skills.join(', ') : '';
+        if (user.current_location) document.getElementById('current_location').value = user.current_location;
+        if (user.preferred_locations) document.getElementById('preferred_locations').value = user.preferred_locations.join(', ');
+        if (user.experience_years) document.getElementById('experience_years').value = user.experience_years;
+        if (user.education) document.getElementById('education').value = user.education;
+        if (user.notice_period) document.getElementById('notice_period').value = user.notice_period;
+        if (user.expected_salary) document.getElementById('expected_salary').value = user.expected_salary;
+        if (user.linkedin) document.getElementById('linkedin').value = user.linkedin;
+
+        loadingView.style.display = 'none';
+        formView.style.display = 'block';
+      } catch (err) {
+        showError('Network error while validating token.');
+      }
+    }
+
+    function showError(msg) {
+      loadingView.style.display = 'none';
+      formView.style.display = 'none';
+      successView.style.display = 'none';
+      errorMessage.innerText = msg;
+      errorView.style.display = 'block';
+    }
+
+    profileForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<span class="spinner"></span> Saving Profile...';
+
+      const payload = {
+        token,
+        phone: document.getElementById('phone').value.trim(),
+        experience_years: document.getElementById('experience_years').value,
+        current_location: document.getElementById('current_location').value.trim(),
+        preferred_locations: document.getElementById('preferred_locations').value.split(',').map(s => s.trim()).filter(Boolean),
+        skills: document.getElementById('skills').value.split(',').map(s => s.trim()).filter(Boolean),
+        education: document.getElementById('education').value.trim(),
+        notice_period: document.getElementById('notice_period').value,
+        expected_salary: document.getElementById('expected_salary').value.trim(),
+        linkedin: document.getElementById('linkedin').value.trim(),
+      };
+
+      try {
+        const res = await fetch('/api/profile/setup', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+          formView.style.display = 'none';
+          successView.style.display = 'block';
+        } else {
+          alert(data.error || 'Failed to save profile. Please try again.');
+          submitBtn.disabled = false;
+          submitBtn.innerText = 'Save Profile & Start Auto-Applying';
+        }
+      } catch (err) {
+        alert('Network error while submitting profile.');
+        submitBtn.disabled = false;
+        submitBtn.innerText = 'Save Profile & Start Auto-Applying';
+      }
+    });
+
+    init();
+  </script>
+</body>
+</html>
+

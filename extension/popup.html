@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>WhatsHire Safe Filler</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="wh-popup-container">
+    <!-- Header -->
+    <header class="wh-header">
+      <div class="wh-brand">
+        <div class="wh-logo-icon">WH</div>
+        <div>
+          <h2>WhatsHire</h2>
+          <span class="wh-tagline">Safe Job Form Filler</span>
+        </div>
+      </div>
+      <span class="wh-version-tag">Paid Only</span>
+    </header>
+
+    <!-- Email & License Key Sync Box -->
+    <div class="wh-card wh-sync-card">
+      <label for="user-email">Telegram Account Email:</label>
+      <input type="email" id="user-email" placeholder="jane@example.com" class="wh-input">
+
+      <label for="user-license" style="margin-top: 8px;">Extension License Key:</label>
+      <input type="text" id="user-license" placeholder="WH-XXXX-XXXX-XXXX" class="wh-input">
+
+      <button id="btn-sync" class="wh-btn-sync" style="width: 100%; margin-top: 10px;">Verify & Sync Profile</button>
+      <span id="sync-status" class="wh-status-text">Enter your Telegram email & license key to activate</span>
+    </div>
+
+    <!-- Subscription Status Display -->
+    <div id="sub-status-card" class="wh-card wh-sub-card" style="display: none;">
+      <!-- Populated dynamically via JS -->
+    </div>
+
+    <!-- Quick Action -->
+    <div class="wh-action-box">
+      <button id="btn-trigger-fill" class="wh-btn-fill-action" disabled>
+        ⚡ Fill Job Form on Current Page
+      </button>
+    </div>
+
+    <!-- Safety Guarantee -->
+    <div class="wh-card wh-safety-card">
+      <div class="wh-safety-header">
+        <span>🛡️ 99% Safe · Less Than 1% Ban Risk</span>
+      </div>
+      <ul class="wh-safety-list">
+        <li><strong>Human Typing:</strong> 80-190ms random keystrokes</li>
+        <li><strong>Manual Submit:</strong> You review and click Submit</li>
+        <li><strong>Daily Safety Cap:</strong> Maximum 40 fills/day</li>
+        <li><strong>Residential IP:</strong> Runs inside your real browser session</li>
+      </ul>
+    </div>
+
+    <!-- Footer Links -->
+    <footer class="wh-footer">
+      <a href="https://t.me/TeleHireJOB_bot" target="_blank" class="wh-bot-link">
+        🤖 Open WhatsHire Telegram Bot (/extension for key)
+      </a>
+    </footer>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
