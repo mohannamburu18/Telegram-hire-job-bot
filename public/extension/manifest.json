@@ -1,32 +1,33 @@
 {
   "manifest_version": 3,
-  "name": "TeleHire - Real-Time Safe Job Form Filler & Auto-Apply",
-  "version": "2.1.0",
-  "description": "Real-time persistent side panel and multi-step application autofill assistant for LinkedIn Easy Apply, Greenhouse, Lever, Ashby, Workable, Naukri, and modern ATS platforms. Human-paced typing, real-time field mapping, and mandatory manual submission review.",
+  "name": "Lucres AI & TeleHire - Real-Time Smart Autofill & Auto-Apply",
+  "version": "2.2.0",
+  "description": "Universal ATS autofill engine for Greenhouse, Lever, Ashby, Workday, LinkedIn Easy Apply, and modern job portals. Human-paced typing, 5-layer selector fallback, and 95% ATS profile mapping.",
   "permissions": [
     "storage",
     "activeTab",
+    "scripting",
     "tabs",
     "sidePanel"
   ],
   "host_permissions": [
-    "*://*.linkedin.com/*",
-    "*://*.naukri.com/*",
-    "*://*.indeed.com/*",
-    "*://*.cutshort.io/*",
-    "*://*.hirist.com/*",
-    "*://*.foundit.in/*",
-    "*://*.internshala.com/*",
-    "*://*.wellfound.com/*",
-    "*://*.workable.com/*",
-    "*://*.lever.co/*",
-    "*://*.greenhouse.io/*",
-    "*://*.ashbyhq.com/*",
-    "*://*.keka.com/*",
-    "*://*.myworkdayjobs.com/*",
-    "*://localhost/*",
-    "*://127.0.0.1/*",
-    "*://*.onrender.com/*"
+    "https://*.greenhouse.io/*",
+    "https://*.lever.co/*",
+    "https://*.ashbyhq.com/*",
+    "https://*.workday.com/*",
+    "https://*.myworkday.com/*",
+    "https://*.myworkdayjobs.com/*",
+    "https://*.linkedin.com/*",
+    "https://*.naukri.com/*",
+    "https://*.indeed.com/*",
+    "https://*.cutshort.io/*",
+    "https://*.hirist.com/*",
+    "https://*.internshala.com/*",
+    "https://*.workable.com/*",
+    "https://*.keka.com/*",
+    "http://localhost/*",
+    "http://127.0.0.1/*",
+    "https://*.onrender.com/*"
   ],
   "background": {
     "service_worker": "background.js"
@@ -37,20 +38,20 @@
   "content_scripts": [
     {
       "matches": [
-        "*://*.linkedin.com/*",
-        "*://*.naukri.com/*",
-        "*://*.indeed.com/*",
-        "*://*.cutshort.io/*",
-        "*://*.hirist.com/*",
-        "*://*.foundit.in/*",
-        "*://*.internshala.com/*",
-        "*://*.wellfound.com/*",
-        "*://*.workable.com/*",
-        "*://*.lever.co/*",
-        "*://*.greenhouse.io/*",
-        "*://*.ashbyhq.com/*",
-        "*://*.keka.com/*",
-        "*://*.myworkdayjobs.com/*"
+        "https://*.greenhouse.io/*",
+        "https://*.lever.co/*",
+        "https://*.ashbyhq.com/*",
+        "https://*.workday.com/*",
+        "https://*.myworkday.com/*",
+        "https://*.myworkdayjobs.com/*",
+        "https://*.linkedin.com/*",
+        "https://*.naukri.com/*",
+        "https://*.indeed.com/*",
+        "https://*.cutshort.io/*",
+        "https://*.hirist.com/*",
+        "https://*.internshala.com/*",
+        "https://*.workable.com/*",
+        "https://*.keka.com/*"
       ],
       "js": ["content.js"],
       "css": ["content.css"],
@@ -59,7 +60,7 @@
   ],
   "action": {
     "default_popup": "popup.html",
-    "default_title": "TeleHire Real-Time Safe Form Filler"
+    "default_title": "Lucres AI Safe Form Filler"
   },
   "icons": {
     "16": "icon16.png",

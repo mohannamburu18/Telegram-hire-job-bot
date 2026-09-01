@@ -1,6 +1,14 @@
 const axios = require('axios');
 const cheerio = require('cheerio');
+const crypto = require('crypto');
 const { isFresherJob } = require('./experienceFilter');
+const JobCache = require('../models/JobCache');
+
+function jobHash(j) {
+  if (!j) return '';
+  const str = `${j.title || ''}-${j.company || ''}-${j.location || ''}`.toLowerCase().trim();
+  return crypto.createHash('md5').update(str).digest('hex');
+}
 
 const HEADERS = {
   'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -538,10 +546,13 @@ async function fetchLiveJobs(role, location, userExpYears = 0) {
     }
   });
 
-  // Strict Fresher Experience Filter Pass
+  // Strict Fresher Experience Filter Pass & Hash Generation
   let fresherFiltered = [];
   for (const j of combined) {
     if (!j) continue;
+    j.hash = jobHash(j);
+    j.jobHash = j.hash;
+
     const expCheck = isFresherJob(j.title, j.description || '', userExp);
     if (!expCheck.keep) {
       console.log(`Filtered non-fresher for 0-1 yr: ${j.title}`);
@@ -551,15 +562,41 @@ async function fetchLiveJobs(role, location, userExpYears = 0) {
     fresherFiltered.push(j);
   }
 
-  // Deduplicate by job_url
-  const seen = new Set();
-  let deduped = [];
+  // Deduplicate by jobHash and URL using Map
+  const hashMap = new Map();
   for (const j of fresherFiltered) {
-    if (j && j.job_url && !seen.has(j.job_url)) {
-      seen.add(j.job_url);
-      deduped.push(j);
+    if (j && j.hash && !hashMap.has(j.hash)) {
+      hashMap.set(j.hash, j);
     }
   }
+  let deduped = Array.from(hashMap.values());
+
+  // Cache deduplicated jobs asynchronously in JobCache
+  (async () => {
+    try {
+      const ops = deduped.map(j => ({
+        updateOne: {
+          filter: { hash: j.hash },
+          update: {
+            $set: {
+              hash: j.hash,
+              title: j.title,
+              company: j.company,
+              location: j.location,
+              url: j.job_url,
+              source: j.source,
+              lastSeen: new Date(),
+              isLive: true,
+            },
+          },
+          upsert: true,
+        },
+      }));
+      if (ops.length > 0) {
+        await JobCache.bulkWrite(ops, { ordered: false }).catch(() => {});
+      }
+    } catch (_) {}
+  })();
 
   // Filter location score >= 5
   let afterLoc = deduped.filter(j => (j.loc_score || 0) >= 5);
@@ -606,6 +643,7 @@ async function fetchLiveJobs(role, location, userExpYears = 0) {
 module.exports = {
   fetchLiveJobs,
   isFresherJob,
+  jobHash,
   fetchWorkableLive,
   fetchLeverLive,
   fetchGreenhouseLive,

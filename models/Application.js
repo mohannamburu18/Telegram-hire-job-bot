@@ -16,6 +16,10 @@ const ApplicationSchema = new mongoose.Schema({
     required: true,
     unique: true,
   },
+  jobHash: {
+    type: String,
+    index: true,
+  },
   title: {
     type: String,
     required: true,
@@ -37,7 +41,7 @@ const ApplicationSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['submitted', 'viewed_by_hr', 'shortlisted', 'rejected'],
+    enum: ['queued', 'opening', 'filling', 'ready_for_manual_submit', 'submitted', 'viewed_by_hr', 'shortlisted', 'rejected', 'failed'],
     default: 'submitted',
   },
   applied_at: {
@@ -49,4 +53,3 @@ const ApplicationSchema = new mongoose.Schema({
 });
 
 module.exports = mongoose.model('Application', ApplicationSchema);
-

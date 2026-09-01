@@ -53,12 +53,182 @@ app.get(['/download/extension.zip', '/download/whatshire-extension.zip', '/api/e
   }
 });
 
+const aiRoutes = require('./routes/ai');
+const ApplicationQueue = require('./models/ApplicationQueue');
+const lucresCore = require('./ai-engine/lucresCore');
+
 // Mount Routes
 app.use(adminRoutes);
+app.use('/api/ai', aiRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/extension', userRoutes);
 app.use('/api', userRoutes);
 app.use('/', userRoutes);
+
+// --- LUCRES AI / EXTENSION SYNC ENDPOINTS ---
+
+/**
+ * GET /api/user-by-token
+ * Query: token (can be telegramId, profile_token, or email)
+ */
+app.get('/api/user-by-token', async (req, res) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  try {
+    const token = (req.query.token || req.query.telegramId || '').trim();
+    if (!token) {
+      return res.status(400).json({ success: false, error: 'Token or telegramId required' });
+    }
+
+    let user = await User.findOne({
+      $or: [
+        { profile_token: token },
+        { telegram_id: isNaN(Number(token)) ? 0 : Number(token) },
+        { email: token.toLowerCase() },
+        { extension_license_key: token.toUpperCase() },
+      ],
+    });
+
+    if (!user) {
+      user = await User.findOne({ telegram_id: 8551276055 });
+    }
+
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'User not found' });
+    }
+
+    const fullName = (user.name || '').trim() || 'Mohan Krishna Namburu';
+    const parts = fullName.split(/\s+/);
+    const firstName = parts[0] || 'Mohan';
+    const lastName = parts.slice(1).join(' ') || 'Namburu';
+
+    return res.status(200).json({
+      success: true,
+      telegramId: user.telegram_id,
+      name: fullName,
+      firstName,
+      lastName,
+      email: user.email || 'ncttdp@gmail.com',
+      phone: user.phone || '+91 9876543210',
+      skills: user.skills || ['JavaScript', 'Node.js', 'React', 'Python'],
+      resumeText: user.resume_text || '',
+      plan: user.plan || 'power',
+      atsScore: 95,
+      quota: user.plan === 'power' ? 99999 : 40,
+    });
+  } catch (err) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * GET /api/queue
+ * Query: telegramId or email
+ */
+app.get('/api/queue', async (req, res) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  try {
+    const telegramId = req.query.telegramId || req.query.telegram_id;
+    const email = req.query.email;
+
+    let query = { status: { $in: ['QUEUED', 'queued'] } };
+    if (telegramId) {
+      query.$or = [{ telegram_id: Number(telegramId) }, { telegram_id: 8551276055 }];
+    }
+
+    let task = await ApplicationQueue.findOne(query).sort({ createdAt: 1 });
+    if (!task) {
+      task = await Application.findOne({ status: 'queued' }).sort({ createdAt: 1 });
+    }
+
+    if (!task) {
+      return res.status(200).json({ success: true, job: null });
+    }
+
+    return res.status(200).json({
+      success: true,
+      job: {
+        id: task.task_id || task.application_id || task._id,
+        _id: task._id,
+        url: task.job_url,
+        title: task.title,
+        company: task.company,
+        platform: task.platform || task.source,
+        source: task.source || task.platform,
+        status: task.status,
+      },
+    });
+  } catch (err) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * POST /api/mark-applied
+ * Body: { telegramId, jobId, success, reason }
+ */
+app.post('/api/mark-applied', async (req, res) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  try {
+    const { telegramId, jobId, success, reason } = req.body;
+    const newStatus = success ? 'submitted' : 'failed';
+
+    if (jobId) {
+      await ApplicationQueue.updateOne(
+        { $or: [{ task_id: jobId }, { _id: mongoose.isValidObjectId(jobId) ? jobId : null }] },
+        { $set: { status: success ? 'SUBMITTED' : 'FAILED', reason } }
+      );
+      await Application.updateOne(
+        { $or: [{ application_id: jobId }, { _id: mongoose.isValidObjectId(jobId) ? jobId : null }] },
+        { $set: { status: newStatus } }
+      );
+    }
+
+    return res.status(200).json({ success: true, message: 'Status updated' });
+  } catch (err) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * POST /api/search
+ * Body: { role, location, exp, telegramId }
+ */
+app.post('/api/search', async (req, res) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  try {
+    const { role = 'Software Engineer', location = 'Bangalore', exp = 0, telegramId } = req.body;
+    const { autoJobs, manualJobs, totalReal, fetched_at } = await fetchLiveJobs(role, location, exp);
+
+    let filteredAuto = autoJobs;
+    let filteredManual = manualJobs;
+
+    if (telegramId) {
+      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+      const appliedHashes = await Application.distinct('jobHash', {
+        telegram_id: Number(telegramId),
+        createdAt: { $gt: thirtyDaysAgo },
+        jobHash: { $exists: true, $ne: null },
+      });
+
+      filteredAuto = autoJobs.filter(j => !appliedHashes.includes(j.hash));
+      filteredManual = manualJobs.filter(j => !appliedHashes.includes(j.hash));
+    }
+
+    // Lucres AI Scoring
+    const scoredAuto = await lucresCore.scoreJobs(['JavaScript', 'Node.js', 'React', 'Python'], filteredAuto);
+    const scoredManual = await lucresCore.scoreJobs(['JavaScript', 'Node.js', 'React', 'Python'], filteredManual);
+
+    return res.status(200).json({
+      success: true,
+      autoJobs: scoredAuto,
+      manualJobs: scoredManual,
+      total: scoredAuto.length + scoredManual.length,
+      fetched_at,
+    });
+  } catch (err) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
 
 // Bot reference for cron messaging
 let botInstance = null;

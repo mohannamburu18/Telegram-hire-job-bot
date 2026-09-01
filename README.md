@@ -182,3 +182,10 @@ Visit: `http://localhost:3000/admin?secret=whatshire_admin_2026_secure`
 - `/admin unlimited <telegram_id>` — Grant lifetime God Mode with infinite auto-applications
 - `/admin activate <telegram_id> <starter|popular|power>` — Upgrade a candidate's plan
 - `/admin addauto <telegram_id> <amount>` — Credit bonus auto-applications
+
+
+
+
+
+
+

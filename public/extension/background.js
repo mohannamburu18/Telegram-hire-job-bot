@@ -1,6 +1,6 @@
 /**
- * TeleHire Safe Filler & Auto-Apply Background Service Worker (Phase 7 Real-Time Engine)
- * Persistent Session Management · Side Panel Opener · Multi-Tab Queue Orchestrator
+ * Lucres AI & TeleHire - Background Service Worker
+ * Persistent Session Management · 120s Queue Poller · Tab Navigation Handshake
  */
 
 const BACKEND_URL = 'https://telegram-hire-job-bot.onrender.com';
@@ -13,6 +13,33 @@ if (chrome.sidePanel && chrome.sidePanel.setPanelBehavior) {
   chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(() => {});
 }
 
+// 120s Autonomous Queue Poller
+setInterval(async () => {
+  try {
+    const storage = await new Promise(r => chrome.storage.local.get(['userEmail', 'telegramId', 'userLicense', 'autoProcessQueue'], r));
+    if (!storage.autoProcessQueue) return;
+
+    const backend = await getBackendUrl();
+    const targetUrl = `${backend}/api/queue?telegramId=${storage.telegramId || ''}&email=${encodeURIComponent(storage.userEmail || '')}`;
+    const res = await fetchWithRetry(targetUrl);
+
+    if (res && res.success && res.job && res.job.url) {
+      console.log('[Lucres Poller] Found queued job:', res.job.title, res.job.url);
+      const tab = await chrome.tabs.create({ url: res.job.url });
+      activeQueueSession = {
+        taskId: res.job.id,
+        jobUrl: res.job.url,
+        title: res.job.title,
+        company: res.job.company,
+        platform: res.job.platform,
+        status: 'OPENING',
+        tabId: tab.id,
+      };
+      chrome.storage.local.set({ activeTask: activeQueueSession });
+    }
+  } catch (_) {}
+}, 120000);
+
 function getTodayKey() {
   return new Date().toISOString().split('T')[0];
 }
@@ -20,7 +47,7 @@ function getTodayKey() {
 async function getBackendUrl() {
   return new Promise((resolve) => {
     chrome.storage.local.get(['customBackendUrl'], (data) => {
-      resolve(data.customBackendUrl || BACKEND_URL);
+      resolve(data.customBackendUrl || LOCAL_BACKEND_URL);
     });
   });
 }
@@ -42,6 +69,11 @@ async function fetchWithRetry(url, options = {}, retries = 2) {
 
 // Runtime Message Listener
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.type === 'LINK_BY_TOKEN') {
+    handleLinkByToken(request.token).then(sendResponse);
+    return true;
+  }
+
   if (request.type === 'CHECK_SUBSCRIPTION') {
     handleCheckSubscription(request.email, request.license).then(sendResponse);
     return true;
@@ -319,15 +351,25 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   }
 });
 
-async function getDailyUsage() {
-  return new Promise((resolve) => {
-    const todayKey = getTodayKey();
-    chrome.storage.local.get([`fills_${todayKey}`], (data) => {
-      resolve({
-        count: data[`fills_${todayKey}`] || 0,
-        limit: 40,
-        date: todayKey,
+async function handleLinkByToken(token) {
+  try {
+    const backend = await getBackendUrl();
+    const res = await fetchWithRetry(`${backend}/api/user-by-token?token=${encodeURIComponent(token)}`);
+    if (res && res.success) {
+      chrome.storage.local.set({
+        telegramId: res.telegramId,
+        userEmail: res.email,
+        userProfile: res,
+        isPaid: true,
+        plan: res.plan,
+        atsScore: res.atsScore || 95,
       });
-    });
-  });
+      return { success: true, user: res };
+    }
+    return { success: false, error: res?.error || 'Token verification failed' };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
 }
+
+module.exports = {};

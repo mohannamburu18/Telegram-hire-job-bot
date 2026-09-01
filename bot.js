@@ -605,18 +605,29 @@ function createBot() {
 
         try { await ctx.deleteMessage(searchNotice.message_id); } catch (_) {}
 
-        if (totalReal === 0) {
+        // Filter out jobs user has already applied to in last 30 days by jobHash
+        const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+        const appliedHashes = await Application.distinct('jobHash', {
+          $or: [{ telegram_id: user.telegram_id }, { user_id: user._id }],
+          createdAt: { $gt: thirtyDaysAgo },
+          jobHash: { $exists: true, $ne: null },
+        });
+
+        const finalAuto = autoJobs.filter(j => !appliedHashes.includes(j.hash));
+        const finalManual = manualJobs.filter(j => !appliedHashes.includes(j.hash));
+
+        if (finalAuto.length === 0 && finalManual.length === 0) {
           return ctx.reply(
-            `No live fresher jobs found right now for <b>${escapeHtml(role)}</b> in <b>${escapeHtml(location)}</b> at ${new Date().toLocaleTimeString('en-IN')}.\nReal data only, no seed. Try searching <i>"Software Engineer in Bangalore"</i> or <i>"Python Developer in Remote"</i>.`,
+            `No new live fresher jobs found right now for <b>${escapeHtml(role)}</b> in <b>${escapeHtml(location)}</b> (or you recently applied to them).\nReal data only, no repeats. Try searching <i>"Software Engineer in Bangalore"</i> or <i>"Python Developer in Remote"</i>.`,
             { parse_mode: 'HTML' }
           );
         }
 
-        console.log(`Sending to Telegram: auto ${autoJobs.length} manual ${manualJobs.length} chunks ${Math.ceil(autoJobs.length / 5)}`);
+        console.log(`Sending to Telegram: auto ${finalAuto.length} manual ${finalManual.length} chunks ${Math.ceil(finalAuto.length / 5)}`);
 
         searchCache.set(user.telegram_id, {
-          autoJobs,
-          manualJobs,
+          autoJobs: finalAuto,
+          manualJobs: finalManual,
           offsetAuto: 0,
           offsetManual: 0,
           role,
@@ -843,6 +854,7 @@ async function executeAutoApply(ctx, user, indexNumber) {
       user_id: user._id,
       telegram_id: user.telegram_id,
       application_id: applicationId,
+      jobHash: job.hash || job.jobHash,
       title: job.title,
       company: job.company,
       location: job.location,

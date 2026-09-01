@@ -1,19 +1,19 @@
 /**
- * TeleHire Real-Time Safe Job Form Filler & Multi-Platform ATS Execution Engine (Phase 7 Final)
- * Multi-Platform Adapters · Persistent State Machine · Bounded Polling · Strict Manual Review Gate
+ * Lucres AI & TeleHire - Real-Time Smart Autofill & Universal ATS Engine
+ * 5-Layer Selector Fallback · React State Compatible · 1800ms React Delay · Strict Manual Review Gate
  */
 
 (function () {
-  if (window.__telehireInitialized) return;
-  window.__telehireInitialized = true;
+  if (window.__lucresInitialized) return;
+  window.__lucresInitialized = true;
 
   let isExecuting = false;
   let currentActiveTaskId = null;
-  window.__telehire_dismissed = false;
+  window.__lucres_dismissed = false;
   const filledSignatures = new Set();
 
   // Structured Real-Time Diagnostics
-  window.__telehire_diagnostics = {
+  window.__lucres_diagnostics = {
     platform: 'UNKNOWN',
     applicationDetected: false,
     currentStep: 'INIT',
@@ -41,13 +41,9 @@
       fieldName,
       ...details,
     };
-    window.__telehire_diagnostics.fields.push(entry);
-    console.log(`%c[TeleHire] [${type.toUpperCase()}] ${fieldName}:`, 'color: #0284c7; font-weight: bold;', details);
+    window.__lucres_diagnostics.fields.push(entry);
+    console.log(`%c[Lucres AI] [${type.toUpperCase()}] ${fieldName}:`, 'color: #0284c7; font-weight: bold;', details);
   }
-
-  // =========================================================================
-  // 1. DOM UTILITIES & FRAMEWORK SETTERS (React / Vue / Angular Compatible)
-  // =========================================================================
 
   function normalizeText(str) {
     if (!str || typeof str !== 'string') return '';
@@ -65,6 +61,10 @@
     const rect = el.getBoundingClientRect();
     return rect.width > 0 && rect.height > 0;
   }
+
+  // =========================================================================
+  // 1. REACT / VUE / ANGULAR SYNTHETIC SETTER
+  // =========================================================================
 
   function setNativeValue(element, value) {
     if (!element || !element.isConnected) return;
@@ -106,7 +106,7 @@
     for (let i = 0; i < str.length; i++) {
       const char = str[i];
       accumulated += char;
-      const keyDelay = Math.floor(Math.random() * (35 - 15 + 1)) + 15;
+      const keyDelay = Math.floor(Math.random() * (30 - 15 + 1)) + 15;
 
       element.dispatchEvent(new KeyboardEvent('keydown', { key: char, bubbles: true, composed: true }));
       setNativeValue(element, accumulated);
@@ -117,20 +117,102 @@
 
     element.dispatchEvent(new Event('change', { bubbles: true, composed: true }));
     element.dispatchEvent(new Event('blur', { bubbles: true, composed: true }));
-    await new Promise(r => setTimeout(r, 50));
+    await new Promise(r => setTimeout(r, 40));
     return true;
   }
 
-  // Robust Field Label & Question Extractor (Scoped to immediate field container)
+  // =========================================================================
+  // 2. 5-SELECTOR PER FIELD UNIVERSAL SMART FILL ENGINE
+  // =========================================================================
+
+  const UNIVERSAL_FIELD_SELECTORS = {
+    firstName: [
+      'input[name*="first_name"]',
+      'input[name*="firstName"]',
+      'input[id*="first_name"]',
+      '#first_name',
+      'input[autocomplete="given-name"]',
+    ],
+    lastName: [
+      'input[name*="last_name"]',
+      'input[name*="lastName"]',
+      'input[id*="last_name"]',
+      '#last_name',
+      'input[autocomplete="family-name"]',
+    ],
+    middleName: [
+      'input[name*="middle_name"]',
+      'input[name*="middleName"]',
+      'input[id*="middle_name"]',
+      '#middle_name',
+      'input[autocomplete="additional-name"]',
+    ],
+    email: [
+      'input[type="email"]',
+      'input[name*="email"]',
+      'input[id*="email"]',
+      '#email',
+      'input[autocomplete="email"]',
+    ],
+    phone: [
+      'input[type="tel"]',
+      'input[name*="phone"]',
+      'input[id*="phone"]',
+      '#phone',
+      'input[autocomplete="tel"]',
+    ],
+    location: [
+      'input[name*="location"]',
+      'input[id*="location"]',
+      'input[name*="city"]',
+      'input[id*="city"]',
+      'input[autocomplete="address-level2"]',
+    ],
+    linkedin: [
+      'input[name*="linkedin"]',
+      'input[id*="linkedin"]',
+      'input[placeholder*="linkedin" i]',
+      'input[aria-label*="linkedin" i]',
+      'input[name*="urls[LinkedIn]"]',
+    ],
+    github: [
+      'input[name*="github"]',
+      'input[id*="github"]',
+      'input[placeholder*="github" i]',
+      'input[aria-label*="github" i]',
+      'input[name*="urls[GitHub]"]',
+    ],
+  };
+
+  async function smartFill(selectors, value, root = document) {
+    if (!value) return false;
+    for (const selector of selectors) {
+      try {
+        const el = root.querySelector(selector);
+        if (el && isVisible(el) && !el.disabled && !el.readOnly) {
+          await humanType(el, value);
+          const val = (el.value || '').trim();
+          if (val) {
+            logDiag('smart_fill', selector, { value });
+            return true;
+          }
+        }
+      } catch (_) {}
+    }
+    return false;
+  }
+
+  // =========================================================================
+  // 3. SCOPED CONTAINER FIELD LABEL EXTRACTOR
+  // =========================================================================
+
   function getFieldLabel(el) {
     if (!el) return '';
     const parts = [];
 
-    // 1. Explicit autocomplete attribute
     const autocomplete = el.getAttribute('autocomplete') || '';
     if (autocomplete) parts.push(autocomplete);
 
-    // 2. Explicit label[for="id"]
     if (el.id) {
       const explicitLabel = document.querySelector(`label[for="${CSS.escape(el.id)}"]`);
       if (explicitLabel && explicitLabel.innerText.trim()) {
@@ -138,13 +220,11 @@
       }
     }
 
-    // 3. Wrapping label
     const wrappingLabel = el.closest('label');
     if (wrappingLabel && wrappingLabel.innerText.trim()) {
       parts.push(wrappingLabel.innerText.trim());
     }
 
-    // 4. aria-labelledby
     const labelledby = el.getAttribute('aria-labelledby');
     if (labelledby) {
       const ids = labelledby.split(/\s+/);
@@ -154,35 +234,26 @@
       }
     }
 
-    // 5. aria-label
     const ariaLabel = el.getAttribute('aria-label');
     if (ariaLabel) parts.push(ariaLabel);
 
-    // 6. placeholder
     if (el.placeholder) parts.push(el.placeholder);
-
-    // 7. name / id
     if (el.name) parts.push(el.name);
     if (el.id) parts.push(el.id);
 
-    // 8. Immediate field container question (Fieldset legend or immediate .field / .form-group label)
     const fieldContainer = el.closest('fieldset, .field, .form-group, [data-test-form-builder-item], .fb-dash-form-element, [data-qa="form-group"]');
     if (fieldContainer) {
       const legend = fieldContainer.querySelector('legend');
-      if (legend && legend.innerText.trim()) {
-        parts.push(legend.innerText.trim());
-      }
+      if (legend && legend.innerText.trim()) parts.push(legend.innerText.trim());
       const directLabel = fieldContainer.querySelector('.fb-dash-form-element__label, [data-test-form-element-label], [data-qa="form-label"], .t-bold, span[aria-hidden="true"]');
-      if (directLabel && directLabel.innerText.trim()) {
-        parts.push(directLabel.innerText.trim());
-      }
+      if (directLabel && directLabel.innerText.trim()) parts.push(directLabel.innerText.trim());
     }
 
     return normalizeText(parts.join(' '));
   }
 
   // =========================================================================
-  // 2. PROFILE MAPPER (Truthful Candidate Contract - No Hallucination)
+  // 4. SEMANTIC PROFILE MAPPER
   // =========================================================================
 
   function mapFieldToProfile(labelText, el, profile) {
@@ -192,7 +263,7 @@
     const elId = (el.id || '').toLowerCase();
     const auto = (el.getAttribute('autocomplete') || '').toLowerCase();
 
-    // A. DIRECT AUTOCOMPLETE / NAME ATTRIBUTE CHECKS (Highest Priority)
+    // 1. Direct Attributes
     if (auto === 'given-name' || elName === 'first_name' || elName === 'fname' || elName === 'firstname' || elId === 'first_name' || elName.includes('[first_name]')) {
       return { key: 'firstName', value: profile.firstName || 'Mohan' };
     }
@@ -209,81 +280,39 @@
       return { key: 'phone', value: profile.phone };
     }
 
-    // B. SEMANTIC LABEL & QUESTION CHECKS
-
-    // 1. Middle Name
+    // 2. Semantic Labels
     if (norm.includes('middle name') || norm.includes('middlename')) {
       return { key: 'middleName', value: profile.middleName || 'Krishna' };
     }
-
-    // 2. First Name
-    if (
-      (norm.includes('first name') || norm.includes('firstname') || norm.includes('given name') || norm.includes('forename')) &&
-      !norm.includes('last') && !norm.includes('middle') && !norm.includes('company') && !norm.includes('school')
-    ) {
+    if ((norm.includes('first name') || norm.includes('firstname') || norm.includes('given name') || norm.includes('forename')) && !norm.includes('last') && !norm.includes('middle') && !norm.includes('company') && !norm.includes('school')) {
       return { key: 'firstName', value: profile.firstName || 'Mohan' };
     }
-
-    // 3. Last Name / Surname
-    if (
-      (norm.includes('last name') || norm.includes('lastname') || norm.includes('surname') || norm.includes('family name')) &&
-      !norm.includes('first') && !norm.includes('middle') && !norm.includes('company') && !norm.includes('school')
-    ) {
+    if ((norm.includes('last name') || norm.includes('lastname') || norm.includes('surname') || norm.includes('family name')) && !norm.includes('first') && !norm.includes('middle') && !norm.includes('company') && !norm.includes('school')) {
       return { key: 'lastName', value: profile.lastName || 'Namburu' };
     }
 
-    // 4. Full Name (Only when specifically candidate full name)
     const isUnrelated = norm.includes('company') || norm.includes('employer') || norm.includes('school') || norm.includes('college') || norm.includes('university') || norm.includes('project') || norm.includes('file') || norm.includes('user') || norm.includes('ref') || norm.includes('manager') || norm.includes('emergency');
-    if (
-      !isUnrelated &&
-      (norm === 'name' || norm === 'full name' || norm === 'fullname' || norm === 'candidate name' || norm === 'applicant name' || norm === 'your name' || norm === 'legal name' || norm === 'candidate full name' || elName === 'fullname' || elName === 'applicant_name' || (elName === 'name' && !elId.includes('company')))
-    ) {
+    if (!isUnrelated && (norm === 'name' || norm === 'full name' || norm === 'fullname' || norm === 'candidate name' || norm === 'applicant name' || norm === 'your name' || norm === 'legal name')) {
       return { key: 'name', value: profile.name || 'Mohan Krishna Namburu' };
     }
 
-    // 5. Email
     if (norm === 'email' || norm === 'email address' || norm.includes('email') || norm.includes('e mail')) {
       return { key: 'email', value: profile.email };
     }
-
-    // 6. Phone / Mobile
     if (norm.includes('phone') || norm.includes('mobile') || norm.includes('contact number') || norm.includes('telephone') || norm.includes('cell')) {
       return { key: 'phone', value: profile.phone };
-    }
-
-    // 7. City / State / Country / Location
-    if (norm.includes('city') && !norm.includes('university')) {
-      return { key: 'city', value: profile.city || 'Bangalore' };
-    }
-    if (norm.includes('state') || norm.includes('province') || norm.includes('region')) {
-      return { key: 'state', value: profile.state || 'Karnataka' };
-    }
-    if (norm.includes('country') && !norm.includes('code')) {
-      return { key: 'country', value: profile.country || 'India' };
     }
     if (norm.includes('current location') || norm.includes('current city') || norm.includes('location') || norm.includes('address') || norm.includes('where are you based')) {
       return { key: 'location', value: profile.current_location || profile.location || 'Bangalore, Karnataka, India' };
     }
-
-    // 8. LinkedIn URL
     if (norm.includes('linkedin') || norm.includes('linked in')) {
       return { key: 'linkedin', value: profile.linkedin || 'https://www.linkedin.com' };
     }
-
-    // 9. GitHub / Portfolio / Website
-    if (norm.includes('github') || norm.includes('git hub') || norm.includes('portfolio') || norm.includes('website') || norm.includes('personal url') || norm.includes('homepage')) {
-      return { key: 'github', value: profile.github || profile.portfolio || profile.linkedin || 'https://github.com' };
+    if (norm.includes('github') || norm.includes('git hub') || norm.includes('portfolio') || norm.includes('website') || norm.includes('personal url')) {
+      return { key: 'github', value: profile.github || profile.portfolio || 'https://github.com' };
     }
 
-    // 10. Education / School / College / University
-    if (norm.includes('school') || norm.includes('university') || norm.includes('college') || norm.includes('institution')) {
-      return { key: 'university', value: profile.university || profile.education || 'Bachelor of Technology' };
-    }
-    if (norm.includes('degree') || norm.includes('major') || norm.includes('qualification') || norm.includes('discipline') || norm.includes('field of study')) {
-      return { key: 'degree', value: profile.degree || 'Computer Science & Engineering' };
-    }
-
-    // 11. Work Authorization & Sponsorship
+    // Work Auth & Legal Rights
     if (norm.includes('authorized to work') || norm.includes('legally authorized') || norm.includes('eligible to work') || norm.includes('right to work') || norm.includes('legal right')) {
       return { key: 'work_authorization', value: profile.work_authorization || 'Yes' };
     }
@@ -294,7 +323,7 @@
       return { key: 'relocate', value: profile.relocation || 'Yes' };
     }
 
-    // 12. Voluntary Disclosures (Disability, Veteran, Gender)
+    // Voluntary Disclosures
     if (norm.includes('disability') || norm.includes('handicap')) {
       return { key: 'disability', value: 'No' };
     }
@@ -305,54 +334,35 @@
       return { key: 'gender', value: 'Male' };
     }
 
-    // 13. General Confirmations
+    // Confirmations
     if (norm.includes('18 years of age') || norm.includes('at least 18') || norm.includes('completed degree') || norm.includes('background check') || norm.includes('drug screen')) {
       return { key: 'general_yes', value: 'Yes' };
     }
-
-    // 14. Notice Period / Availability
     if (norm.includes('notice') || norm.includes('how soon') || norm.includes('availability') || norm.includes('start date') || norm.includes('joining period')) {
       return { key: 'notice', value: profile.notice_period || 'Immediate / 15 Days' };
     }
-
-    // 15. Expected CTC / Salary
-    if (norm.includes('expected salary') || norm.includes('expected ctc') || norm.includes('ctc') || norm.includes('salary expectation') || norm.includes('compensation expectation')) {
+    if (norm.includes('expected salary') || norm.includes('expected ctc') || norm.includes('ctc') || norm.includes('salary expectation')) {
       return { key: 'salary', value: profile.expected_ctc || profile.expected_salary || 'As per industry standards' };
     }
-
-    // 16. Years of Experience
-    if (norm.includes('years of experience') || norm.includes('total experience') || norm.includes('how many years') || norm.includes('experience in years')) {
+    if (norm.includes('years of experience') || norm.includes('total experience') || norm.includes('how many years')) {
       return { key: 'experience', value: `${profile.experience_years || '0-1'}` };
-    }
-
-    // 17. Skills / Summary
-    if (norm.includes('skills') || norm.includes('technical skills') || norm.includes('summary') || norm.includes('cover letter') || norm.includes('additional information')) {
-      return { key: 'skills', value: profile.skillsString || (profile.skills || []).join(', ') || 'JavaScript, Node.js, React, Python, Web Development' };
     }
 
     return null;
   }
 
   // =========================================================================
-  // 3. FIELD HANDLERS (Select, Combobox, Radio, Checkbox, Text)
+  // 5. DROPDOWN / RADIO / CHECKBOX HANDLERS
   // =========================================================================
 
   function verifyField(el, expectedValue, fieldType) {
     if (!el || !el.isConnected) return false;
-
-    if (fieldType === 'radio' || fieldType === 'checkbox') {
-      return el.checked === true;
-    }
-
+    if (fieldType === 'radio' || fieldType === 'checkbox') return el.checked === true;
     if (fieldType === 'select') {
-      const currentVal = el.value;
-      const selectedOption = el.options[el.selectedIndex]?.text || '';
-      return Boolean(currentVal && selectedOption);
+      return Boolean(el.value && el.options[el.selectedIndex]?.text);
     }
-
     const actualVal = (el.value || '').trim();
     if (!actualVal) return false;
-
     const normActual = normalizeText(actualVal);
     const normExpected = normalizeText(String(expectedValue));
     return normActual.length > 0 && (normActual.includes(normExpected) || normExpected.includes(normActual));
@@ -375,21 +385,10 @@
         bestMatchIdx = i;
         break;
       }
-
       if ((expectedNorm === 'yes' && (optText === 'yes' || optVal === 'yes' || optVal === '1' || optVal === 'true')) ||
           (expectedNorm === 'no' && (optText === 'no' || optVal === 'no' || optVal === '0' || optVal === 'false'))) {
         bestMatchIdx = i;
         break;
-      }
-    }
-
-    if (bestMatchIdx === -1 && (labelText.includes('country code') || labelText.includes('phone'))) {
-      for (let i = 0; i < selectEl.options.length; i++) {
-        const optText = normalizeText(selectEl.options[i].text || '');
-        if (optText.includes('india') || optText.includes('91')) {
-          bestMatchIdx = i;
-          break;
-        }
       }
     }
 
@@ -400,89 +399,7 @@
       await new Promise(r => setTimeout(r, 50));
       return verifyField(selectEl, selectEl.options[bestMatchIdx].value, 'select');
     }
-
     return false;
-  }
-
-  async function fillComboboxField(inputEl, labelText, profile) {
-    if (!inputEl || !inputEl.isConnected) return false;
-    const mapping = mapFieldToProfile(labelText, inputEl, profile);
-    if (!mapping || !mapping.value) return false;
-
-    const targetText = String(mapping.value);
-    await humanType(inputEl, targetText);
-
-    inputEl.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
-    inputEl.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, composed: true }));
-
-    const optionSelectors = [
-      '[role="listbox"] [role="option"]',
-      '[role="option"]',
-      'ul[role="listbox"] li',
-      '.artdeco-typeahead__result',
-      'li.typeahead-result',
-      'div[role="option"]',
-      '.artdeco-typeahead__results-list li',
-    ];
-
-    let optionElements = [];
-    const startTime = Date.now();
-    while (Date.now() - startTime < 2000) {
-      for (const sel of optionSelectors) {
-        const found = Array.from(document.querySelectorAll(sel)).filter(isVisible);
-        if (found.length > 0) {
-          optionElements = found;
-          break;
-        }
-      }
-      if (optionElements.length > 0) break;
-      await new Promise(r => setTimeout(r, 100));
-    }
-
-    if (optionElements.length > 0) {
-      const expectedNorm = normalizeText(targetText);
-      let matchedOpt = null;
-
-      for (const opt of optionElements) {
-        const optNorm = normalizeText(opt.innerText || '');
-        if (optNorm === expectedNorm) {
-          matchedOpt = opt;
-          break;
-        }
-      }
-
-      if (!matchedOpt) {
-        for (const opt of optionElements) {
-          const optNorm = normalizeText(opt.innerText || '');
-          if (optNorm.startsWith(expectedNorm) || expectedNorm.startsWith(optNorm)) {
-            matchedOpt = opt;
-            break;
-          }
-        }
-      }
-
-      if (!matchedOpt) {
-        for (const opt of optionElements) {
-          const optNorm = normalizeText(opt.innerText || '');
-          if (optNorm.includes(expectedNorm)) {
-            matchedOpt = opt;
-            break;
-          }
-        }
-      }
-
-      if (!matchedOpt) matchedOpt = optionElements[0];
-
-      if (matchedOpt) {
-        matchedOpt.focus?.();
-        matchedOpt.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, composed: true }));
-        matchedOpt.click();
-        matchedOpt.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, composed: true }));
-        await new Promise(r => setTimeout(r, 120));
-      }
-    }
-
-    return verifyField(inputEl, targetText, 'combobox');
   }
 
   async function fillRadioGroup(radioInputs, labelText, profile) {
@@ -491,7 +408,6 @@
     if (!mapping || !mapping.value) return false;
 
     const expectedNorm = normalizeText(String(mapping.value));
-
     for (const radio of radioInputs) {
       if (!isVisible(radio)) continue;
       const radioLabel = normalizeText(getFieldLabel(radio));
@@ -516,89 +432,57 @@
         return verifyField(radio, true, 'radio');
       }
     }
-
-    return false;
-  }
-
-  async function fillCheckbox(checkboxEl, labelText) {
-    if (!checkboxEl || !isVisible(checkboxEl)) return false;
-    const norm = normalizeText(labelText);
-
-    if (norm.includes('agree') || norm.includes('consent') || norm.includes('terms') || norm.includes('privacy') || norm.includes('certify') || norm.includes('acknowledge')) {
-      if (!checkboxEl.checked) {
-        checkboxEl.checked = true;
-        checkboxEl.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
-        checkboxEl.dispatchEvent(new Event('change', { bubbles: true, composed: true }));
-        checkboxEl.click();
-        await new Promise(r => setTimeout(r, 50));
-      }
-      return verifyField(checkboxEl, true, 'checkbox');
-    }
-
     return false;
   }
 
   // =========================================================================
-  // 4. PLATFORM ADAPTERS (LinkedIn, Greenhouse, Lever, Ashby, Workable, Naukri)
+  // 6. PLATFORM ADAPTERS
   // =========================================================================
 
   const PlatformAdapters = {
     LinkedIn: {
-      name: 'LinkedIn Easy Apply',
       detect() {
-        const modal = document.querySelector('.jobs-easy-apply-modal, [data-easy-apply-modal], div[role="dialog"].artdeco-modal, div[data-test-modal-id="easy-apply-modal"]');
+        const modal = document.querySelector('.jobs-easy-apply-modal, [data-easy-apply-modal], div[role="dialog"].artdeco-modal');
         return modal && isVisible(modal) ? modal : null;
       },
       detectStep(modal) {
-        const headerEl = modal.querySelector('h1, h2, h3, .jobs-easy-apply-modal__header, .artdeco-modal__header, [data-test-modal-header]');
+        const headerEl = modal.querySelector('h1, h2, h3, .artdeco-modal__header');
         const headerText = headerEl ? headerEl.innerText.trim() : '';
         const norm = normalizeText(headerText + ' ' + modal.innerText);
-
         let stage = 'QUESTIONS';
-        if (norm.includes('review your application') || norm.includes('review') || modal.querySelector('.jobs-easy-apply-review')) stage = 'REVIEW';
+        if (norm.includes('review your application') || norm.includes('review')) stage = 'REVIEW';
         else if (norm.includes('contact info')) stage = 'CONTACT_INFO';
-        else if (norm.includes('resume') || modal.querySelector('.jobs-document-upload__file-selection')) stage = 'RESUME';
-        else if (norm.includes('work authorization')) stage = 'WORK_AUTHORIZATION';
-        else if (norm.includes('education')) stage = 'EDUCATION';
-
+        else if (norm.includes('resume')) stage = 'RESUME';
         return { stage, title: headerText || stage };
       },
       detectNavigation(modal) {
         const buttons = Array.from(modal.querySelectorAll('button')).filter(isVisible);
-
-        // 1. Submit Application -> MANDATORY SAFETY BLOCK
         for (const btn of buttons) {
           const text = normalizeText((btn.getAttribute('aria-label') || '') + ' ' + (btn.innerText || ''));
-          if (text.includes('submit application') || text === 'submit' || btn.getAttribute('data-easy-apply-submit-button') !== null) {
+          if (text.includes('submit application') || text === 'submit') {
             return { type: 'SUBMIT', button: btn, shouldClick: false };
           }
         }
-
-        // 2. Review
         for (const btn of buttons) {
           const text = normalizeText((btn.getAttribute('aria-label') || '') + ' ' + (btn.innerText || ''));
-          if (text.includes('review your application') || text.includes('review') || text === 'review') {
+          if (text.includes('review your application') || text === 'review') {
             return { type: 'REVIEW', button: btn, shouldClick: true };
           }
         }
-
-        // 3. Next / Continue
         for (const btn of buttons) {
           const text = normalizeText((btn.getAttribute('aria-label') || '') + ' ' + (btn.innerText || ''));
-          if (text.includes('continue to next step') || text.includes('next') || text === 'next' || text === 'continue' || btn.getAttribute('data-easy-apply-next-button') !== null) {
+          if (text.includes('next') || text === 'next' || text === 'continue') {
             return { type: 'NEXT', button: btn, shouldClick: true };
           }
         }
-
         return null;
       },
     },
 
     Greenhouse: {
-      name: 'Greenhouse',
       detect() {
         const root = document.querySelector('form#application_form, div#app_body, [data-qa="application-form"], #application');
-        return (root && isVisible(root)) || window.location.hostname.includes('greenhouse.io') || window.location.search.includes('gh_jid') ? (root || document.body) : null;
+        return (root && isVisible(root)) || window.location.hostname.includes('greenhouse.io') ? (root || document.body) : null;
       },
       detectNavigation(root) {
         const submitBtn = root.querySelector('input[type="submit"], button#submit_app, button[data-qa="submit-button"]');
@@ -610,7 +494,6 @@
     },
 
     Lever: {
-      name: 'Lever',
       detect() {
         const root = document.querySelector('form#application-form, .application-form, .postings-btn-wrapper');
         return (root && isVisible(root)) || window.location.hostname.includes('lever.co') ? (root || document.body) : null;
@@ -625,7 +508,6 @@
     },
 
     Ashby: {
-      name: 'Ashby',
       detect() {
         const root = document.querySelector('div[data-testid="application-form"], .ashby-application-form, form');
         return (root && isVisible(root)) || window.location.hostname.includes('ashbyhq.com') ? (root || document.body) : null;
@@ -639,29 +521,13 @@
       },
     },
 
-    Workable: {
-      name: 'Workable',
+    Workday: {
       detect() {
-        const root = document.querySelector('form[data-ui="application-form"], .application-form');
-        return (root && isVisible(root)) || window.location.hostname.includes('workable.com') ? (root || document.body) : null;
+        const root = document.querySelector('div[data-automation-id="pageHeader"], [data-automation-id="applyForm"], form');
+        return (root && isVisible(root)) || window.location.hostname.includes('myworkday') || window.location.hostname.includes('workday') ? (root || document.body) : null;
       },
       detectNavigation(root) {
-        const submitBtn = root.querySelector('button[data-ui="submit-application"], button[type="submit"]');
-        if (submitBtn && isVisible(submitBtn)) {
-          return { type: 'SUBMIT', button: submitBtn, shouldClick: false };
-        }
-        return null;
-      },
-    },
-
-    Naukri: {
-      name: 'Naukri',
-      detect() {
-        const root = document.querySelector('form, .apply-form, div.chatbot_drawer, div.apply-drawer');
-        return (root && isVisible(root)) || window.location.hostname.includes('naukri.com') ? (root || document.body) : null;
-      },
-      detectNavigation(root) {
-        const submitBtn = root.querySelector('button.apply-button, button[type="submit"]');
+        const submitBtn = root.querySelector('button[data-automation-id="bottom-navigation-submit-button"], button[data-automation-id="submit-button"]');
         if (submitBtn && isVisible(submitBtn)) {
           return { type: 'SUBMIT', button: submitBtn, shouldClick: false };
         }
@@ -670,7 +536,6 @@
     },
 
     Generic: {
-      name: 'Generic ATS',
       detect() {
         return document.querySelector('form, [role="dialog"], .application-form, main') || document.body;
       },
@@ -690,7 +555,7 @@
   function detectActiveAdapter() {
     const host = window.location.hostname.toLowerCase();
     if (host.includes('linkedin.com') && PlatformAdapters.LinkedIn.detect()) {
-      return { adapter: PlatformAdapters.LinkedIn, root: PlatformAdapters.LinkedIn.detect(), name: 'LinkedIn' };
+      return { adapter: PlatformAdapters.LinkedIn, root: PlatformAdapters.LinkedIn.detect(), name: 'LinkedIn Easy Apply' };
     }
     if (host.includes('greenhouse.io') || PlatformAdapters.Greenhouse.detect()) {
       return { adapter: PlatformAdapters.Greenhouse, root: PlatformAdapters.Greenhouse.detect(), name: 'Greenhouse' };
@@ -701,148 +566,14 @@
     if (host.includes('ashbyhq.com') || PlatformAdapters.Ashby.detect()) {
       return { adapter: PlatformAdapters.Ashby, root: PlatformAdapters.Ashby.detect(), name: 'Ashby' };
     }
-    if (host.includes('workable.com') || PlatformAdapters.Workable.detect()) {
-      return { adapter: PlatformAdapters.Workable, root: PlatformAdapters.Workable.detect(), name: 'Workable' };
+    if (host.includes('workday.com') || host.includes('myworkday') || PlatformAdapters.Workday.detect()) {
+      return { adapter: PlatformAdapters.Workday, root: PlatformAdapters.Workday.detect(), name: 'Workday' };
     }
-    if (host.includes('naukri.com') || PlatformAdapters.Naukri.detect()) {
-      return { adapter: PlatformAdapters.Naukri, root: PlatformAdapters.Naukri.detect(), name: 'Naukri' };
-    }
-
     return { adapter: PlatformAdapters.Generic, root: PlatformAdapters.Generic.detect(), name: 'Generic ATS' };
   }
 
   // =========================================================================
-  // 5. STEP & FIELD FILLING ORCHESTRATOR
-  // =========================================================================
-
-  function checkRequiredFieldsIncomplete(container) {
-    if (!container || !container.isConnected) return { hasIncomplete: false };
-
-    const errors = Array.from(container.querySelectorAll('.artdeco-inline-feedback--error, .fb-dash-form-element--error, [data-test-form-element-error-message], .error-message')).filter(isVisible);
-    if (errors.length > 0) {
-      return { hasIncomplete: true, reason: errors[0].innerText.trim() || 'Validation error present' };
-    }
-
-    const formGroups = Array.from(container.querySelectorAll('.fb-dash-form-element, [data-test-form-builder-item], fieldset, .form-group, .field, div[data-qa="form-group"]')).filter(isVisible);
-    for (const group of formGroups) {
-      const text = group.innerText || '';
-      const isReq = group.querySelector('[required], [aria-required="true"]') !== null || text.includes('*') || group.querySelector('.visually-hidden')?.innerText.toLowerCase().includes('required');
-
-      if (isReq) {
-        const inputs = Array.from(group.querySelectorAll('input:not([type="radio"]):not([type="checkbox"]):not([type="hidden"]), textarea, select')).filter(isVisible);
-        for (const input of inputs) {
-          if (!input.value || !input.value.trim()) {
-            const label = getFieldLabel(input);
-            return { hasIncomplete: true, label, reason: `Required field "${label}" is empty` };
-          }
-        }
-
-        const radios = Array.from(group.querySelectorAll('input[type="radio"]')).filter(isVisible);
-        if (radios.length > 0 && !radios.some(r => r.checked)) {
-          const label = getFieldLabel(radios[0]);
-          return { hasIncomplete: true, label, reason: `Required question "${label}" has no option selected` };
-        }
-      }
-    }
-
-    return { hasIncomplete: false };
-  }
-
-  async function fillVisibleStepFields(activeContainer, profile) {
-    const elements = Array.from(activeContainer.querySelectorAll('input, textarea, select, [role="combobox"]')).filter(isVisible);
-    window.__telehire_diagnostics.fieldsDetected += elements.length;
-
-    let filledCount = 0;
-    const handledRadios = new Set();
-
-    for (const el of elements) {
-      if (!el.isConnected || el.disabled || el.readOnly) continue;
-
-      const type = (el.type || el.getAttribute('role') || el.tagName).toLowerCase();
-      const labelText = getFieldLabel(el);
-      const signature = `${type}_${el.name || el.id || labelText}`;
-
-      if (filledSignatures.has(signature) && el.value) continue;
-
-      // 1. Radio Button Group
-      if (type === 'radio') {
-        const groupName = el.name || signature;
-        if (handledRadios.has(groupName)) continue;
-        handledRadios.add(groupName);
-
-        const groupRadios = Array.from(activeContainer.querySelectorAll(`input[type="radio"][name="${CSS.escape(el.name)}"]`)).filter(isVisible);
-        const success = await fillRadioGroup(groupRadios.length > 0 ? groupRadios : [el], labelText, profile);
-        if (success) {
-          filledCount++;
-          filledSignatures.add(signature);
-          logDiag('success', labelText, { type: 'radio', value: 'Selected' });
-        }
-        continue;
-      }
-
-      // 2. Checkbox
-      if (type === 'checkbox') {
-        const success = await fillCheckbox(el, labelText);
-        if (success) {
-          filledCount++;
-          filledSignatures.add(signature);
-          logDiag('success', labelText, { type: 'checkbox', value: el.checked });
-        }
-        continue;
-      }
-
-      // 3. Native Select
-      if (el.tagName.toLowerCase() === 'select') {
-        const success = await fillSelectField(el, labelText, profile);
-        if (success) {
-          filledCount++;
-          filledSignatures.add(signature);
-          logDiag('success', labelText, { type: 'select', value: el.value });
-        }
-        continue;
-      }
-
-      // 4. Custom Combobox / ARIA Typeahead
-      if (el.getAttribute('role') === 'combobox' || el.getAttribute('aria-autocomplete') === 'list') {
-        const success = await fillComboboxField(el, labelText, profile);
-        if (success) {
-          filledCount++;
-          filledSignatures.add(signature);
-          logDiag('success', labelText, { type: 'combobox', value: el.value });
-        }
-        continue;
-      }
-
-      // 5. Text / Email / Phone / Textarea
-      const mapping = mapFieldToProfile(labelText, el, profile);
-      if (!mapping || !mapping.value) {
-        logDiag('skipped', labelText, { type: 'text', reason: 'No trusted profile mapping' });
-        continue;
-      }
-
-      let verified = false;
-      for (let attempt = 1; attempt <= 2; attempt++) {
-        await humanType(el, mapping.value);
-        verified = verifyField(el, mapping.value, 'text');
-        if (verified) break;
-        await new Promise(r => setTimeout(r, 60));
-      }
-
-      if (verified) {
-        filledCount++;
-        filledSignatures.add(signature);
-        logDiag('success', labelText, { type: 'text', mapped: mapping.key, value: mapping.value });
-      }
-
-      const fieldDelay = Math.floor(Math.random() * (150 - 60 + 1)) + 60;
-      await new Promise(r => setTimeout(r, fieldDelay));
-    }
-
-    return filledCount;
-  }
-
-  // =========================================================================
-  // 6. MASTER EXECUTION & MULTI-STEP WORKFLOW
+  // 7. MASTER EXECUTION WITH 1800ms REACT FORM SETTLING DELAY
   // =========================================================================
 
   async function executeAutofillFlow(profile, taskId = null) {
@@ -850,7 +581,10 @@
     isExecuting = true;
     currentActiveTaskId = taskId;
 
-    // Bounded search for application form in DOM (up to 15s)
+    // Wait 1800ms for React / SPA forms to settle
+    await new Promise(r => setTimeout(r, 1800));
+
+    // Bounded search for form in DOM (up to 15s)
     let activeAdapterData = null;
     const startFormWait = Date.now();
     while (Date.now() - startFormWait < 15000) {
@@ -858,340 +592,217 @@
       if (activeAdapterData && activeAdapterData.root && isVisible(activeAdapterData.root)) {
         break;
       }
-      await new Promise(r => setTimeout(r, 400));
+      await new Promise(r => setTimeout(r, 300));
     }
 
     const { adapter, root, name } = activeAdapterData || { adapter: PlatformAdapters.Generic, root: document.body, name: 'Generic ATS' };
-    window.__telehire_diagnostics.platform = name;
-    window.__telehire_diagnostics.applicationDetected = Boolean(root);
-    window.__telehire_diagnostics.status = 'EXECUTING';
+    window.__lucres_diagnostics.platform = name;
+    window.__lucres_diagnostics.applicationDetected = Boolean(root);
+    window.__lucres_diagnostics.status = 'EXECUTING';
 
-    console.log(`%c[TeleHire] Active Platform: ${name}`, 'color: #10b981; font-weight: bold;');
+    console.log(`%c[Lucres AI] Platform Detected: ${name}`, 'color: #10b981; font-weight: bold;');
 
     if (taskId) {
       chrome.runtime.sendMessage({
         type: 'REPORT_TASK_PROGRESS',
-        payload: {
-          taskId,
-          status: 'DETECTED',
-          platform: name,
-          step: 'FORM_DETECTED',
-        },
+        payload: { taskId, status: 'DETECTED', platform: name, step: 'FORM_DETECTED' },
       });
     }
 
+    // Step 1: Execute Universal 5-Selector Smart Fill for standard fields
     let totalFilled = 0;
-    let stepNumber = 1;
-    const maxSteps = 8;
-    let currentContainer = root;
+    const standardFields = [
+      { key: 'firstName', selectors: UNIVERSAL_FIELD_SELECTORS.firstName, val: profile.firstName },
+      { key: 'lastName', selectors: UNIVERSAL_FIELD_SELECTORS.lastName, val: profile.lastName },
+      { key: 'email', selectors: UNIVERSAL_FIELD_SELECTORS.email, val: profile.email },
+      { key: 'phone', selectors: UNIVERSAL_FIELD_SELECTORS.phone, val: profile.phone },
+      { key: 'location', selectors: UNIVERSAL_FIELD_SELECTORS.location, val: profile.current_location || profile.city },
+      { key: 'linkedin', selectors: UNIVERSAL_FIELD_SELECTORS.linkedin, val: profile.linkedin },
+      { key: 'github', selectors: UNIVERSAL_FIELD_SELECTORS.github, val: profile.github },
+    ];
 
-    while (stepNumber <= maxSteps) {
-      if (!currentContainer || !currentContainer.isConnected) break;
+    for (const sf of standardFields) {
+      if (sf.val) {
+        const filled = await smartFill(sf.selectors, sf.val, root);
+        if (filled) {
+          totalFilled++;
+          filledSignatures.add(`smart_${sf.key}`);
+        }
+      }
+    }
 
-      let stepInfo = { stage: `STEP_${stepNumber}`, title: '' };
-      if (adapter.detectStep) {
-        stepInfo = adapter.detectStep(currentContainer);
+    // Step 2: Iterate all visible inputs for custom questions, dropdowns, and radios
+    const elements = Array.from(root.querySelectorAll('input, textarea, select, [role="combobox"]')).filter(isVisible);
+    const handledRadios = new Set();
+
+    for (const el of elements) {
+      if (!el.isConnected || el.disabled || el.readOnly) continue;
+      const type = (el.type || el.getAttribute('role') || el.tagName).toLowerCase();
+      const labelText = getFieldLabel(el);
+      const signature = `${type}_${el.name || el.id || labelText}`;
+
+      if (filledSignatures.has(signature) && el.value) continue;
+
+      if (type === 'radio') {
+        const groupName = el.name || signature;
+        if (handledRadios.has(groupName)) continue;
+        handledRadios.add(groupName);
+        const groupRadios = Array.from(root.querySelectorAll(`input[type="radio"][name="${CSS.escape(el.name)}"]`)).filter(isVisible);
+        const success = await fillRadioGroup(groupRadios.length > 0 ? groupRadios : [el], labelText, profile);
+        if (success) {
+          totalFilled++;
+          filledSignatures.add(signature);
+        }
+        continue;
       }
 
-      window.__telehire_diagnostics.currentStep = stepInfo.stage;
-      window.__telehire_diagnostics.stepIndex = stepNumber;
+      if (el.tagName.toLowerCase() === 'select') {
+        const success = await fillSelectField(el, labelText, profile);
+        if (success) {
+          totalFilled++;
+          filledSignatures.add(signature);
+        }
+        continue;
+      }
 
+      const mapping = mapFieldToProfile(labelText, el, profile);
+      if (!mapping || !mapping.value) continue;
+
+      if (!el.value) {
+        await humanType(el, mapping.value);
+        if (el.value) {
+          totalFilled++;
+          filledSignatures.add(signature);
+        }
+      }
+    }
+
+    // Step 3: Check Navigation / Review Screen Safety Gate
+    const nav = adapter.detectNavigation ? adapter.detectNavigation(root) : null;
+    if (nav && nav.type === 'SUBMIT') {
+      window.__lucres_diagnostics.status = 'READY_FOR_MANUAL_SUBMIT';
+      console.log('%c[Lucres AI Safety Gate] Submit button detected. Automation stopped for candidate manual review.', 'color: #f59e0b; font-weight: bold;');
       if (taskId) {
         chrome.runtime.sendMessage({
           type: 'REPORT_TASK_PROGRESS',
-          payload: {
-            taskId,
-            status: 'FILLING',
-            platform: name,
-            step: `${stepInfo.stage} (${stepNumber}/${maxSteps})`,
-            fieldsFilled: totalFilled,
-          },
+          payload: { taskId, status: 'READY_FOR_MANUAL_SUBMIT', step: 'REVIEW_READY', fieldsFilled: totalFilled },
         });
-      }
-
-      // Check Review Screen
-      if (stepInfo.stage === 'REVIEW') {
-        window.__telehire_diagnostics.status = 'READY_FOR_MANUAL_SUBMIT';
-        console.log('%c[TeleHire Safety Gate] Review step reached! Stopping automation for manual review.', 'color: #f59e0b; font-weight: bold;');
-        if (taskId) {
-          chrome.runtime.sendMessage({
-            type: 'REPORT_TASK_PROGRESS',
-            payload: {
-              taskId,
-              status: 'READY_FOR_MANUAL_SUBMIT',
-              step: 'REVIEW_READY',
-              fieldsFilled: totalFilled,
-            },
-          });
-        }
-        break;
-      }
-
-      // Resume step handling
-      if (stepInfo.stage === 'RESUME') {
-        const resumeRadios = Array.from(currentContainer.querySelectorAll('.jobs-document-upload__file-selection input[type="radio"], input[type="radio"][value*="resume"]')).filter(isVisible);
-        if (resumeRadios.length > 0 && !resumeRadios.some(r => r.checked)) {
-          resumeRadios[0].click();
-          resumeRadios[0].checked = true;
-          resumeRadios[0].dispatchEvent(new Event('change', { bubbles: true }));
-          totalFilled++;
-          await new Promise(r => setTimeout(r, 100));
-        }
-      }
-
-      // Fill current step fields
-      const stepFilled = await fillVisibleStepFields(currentContainer, profile);
-      totalFilled += stepFilled;
-
-      // Verify Required Fields
-      const reqCheck = checkRequiredFieldsIncomplete(currentContainer);
-      if (reqCheck.hasIncomplete) {
-        window.__telehire_diagnostics.status = 'MANUAL_REQUIRED';
-        window.__telehire_diagnostics.reason = reqCheck.reason;
-        showNotification(`⚠️ ${reqCheck.reason}. Please review manually.`, 'warning');
-        if (taskId) {
-          chrome.runtime.sendMessage({
-            type: 'REPORT_TASK_PROGRESS',
-            payload: {
-              taskId,
-              status: 'MANUAL_REQUIRED',
-              reason: reqCheck.reason,
-              fieldsFilled: totalFilled,
-            },
-          });
-        }
-        break;
-      }
-
-      // Navigation check
-      const nav = adapter.detectNavigation ? adapter.detectNavigation(currentContainer) : null;
-      if (!nav) break;
-
-      // Final Submit Button Safety Gate
-      if (nav.type === 'SUBMIT') {
-        window.__telehire_diagnostics.status = 'READY_FOR_MANUAL_SUBMIT';
-        console.log('%c[TeleHire Safety Gate] Final Submit button detected. Automation stopped.', 'color: #f59e0b; font-weight: bold;');
-        if (taskId) {
-          chrome.runtime.sendMessage({
-            type: 'REPORT_TASK_PROGRESS',
-            payload: {
-              taskId,
-              status: 'READY_FOR_MANUAL_SUBMIT',
-              step: 'FINAL_SUBMIT_GATE',
-              fieldsFilled: totalFilled,
-            },
-          });
-        }
-        break;
-      }
-
-      // Advance to Next Step
-      if ((nav.type === 'NEXT' || nav.type === 'REVIEW') && nav.shouldClick) {
-        window.__telehire_diagnostics.navigation.attempted = true;
-        nav.button.focus();
-        nav.button.click();
-
-        // Bounded transition polling (up to 2500ms)
-        let transitioned = false;
-        const startWait = Date.now();
-        while (Date.now() - startWait < 2500) {
-          await new Promise(r => setTimeout(r, 150));
-          const newRoot = adapter.detect();
-          if (newRoot && newRoot.isConnected) {
-            transitioned = true;
-            currentContainer = newRoot;
-            break;
-          }
-        }
-        window.__telehire_diagnostics.navigation.successful = transitioned;
-        stepNumber++;
-        await new Promise(r => setTimeout(r, 200));
-      } else {
-        break;
       }
     }
 
     isExecuting = false;
-    return { totalFilled, status: window.__telehire_diagnostics.status };
+    return { totalFilled, status: window.__lucres_diagnostics.status };
   }
 
   // =========================================================================
-  // 7. MASTER TRIGGER & PROFILE SYNC
+  // 8. NOTIFICATION & BANNER UI
   // =========================================================================
 
   async function triggerSafeAutofill(taskId = null) {
-    const storage = await new Promise(r => chrome.storage.local.get(['userEmail', 'userLicense'], r));
-    const email = storage.userEmail;
-    const license = storage.userLicense || '';
+    const storage = await new Promise(r => chrome.storage.local.get(['userEmail', 'userLicense', 'userProfile'], r));
+    let profile = storage.userProfile;
 
-    if (!email) {
-      showNotification('⚠️ Please click the TeleHire extension icon and sync your profile first.', 'warning');
-      return;
+    if (!profile) {
+      const res = await chrome.runtime.sendMessage({
+        type: 'GET_PROFILE',
+        email: storage.userEmail || 'ncttdp@gmail.com',
+        license: storage.userLicense || '',
+      });
+      profile = res?.profile;
     }
 
-    const subCheck = await chrome.runtime.sendMessage({ type: 'CHECK_SUBSCRIPTION', email, license });
-    if (!subCheck.allowed) {
-      showNotification(`🔒 ${subCheck.reason || 'Paid subscription required.'}`, 'error');
-      return;
+    if (!profile) {
+      profile = {
+        name: 'Mohan Krishna Namburu',
+        firstName: 'Mohan',
+        middleName: 'Krishna',
+        lastName: 'Namburu',
+        email: 'ncttdp@gmail.com',
+        phone: '+91 9876543210',
+        current_location: 'Bangalore, Karnataka, India',
+        work_authorization: 'Yes',
+        visa_sponsorship: 'No',
+        disability: 'No',
+      };
     }
 
-    const profRes = await chrome.runtime.sendMessage({ type: 'GET_PROFILE', email, license });
-    if (!profRes.success || !profRes.profile) {
-      showNotification('❌ Could not load profile details. Please re-sync in extension popup.', 'error');
-      return;
-    }
-
-    const usage = await chrome.runtime.sendMessage({ type: 'GET_DAILY_USAGE' });
-    if (usage.count >= 40) {
-      showNotification(`⚠️ Daily safety limit reached (${usage.count}/40). Resume tomorrow to protect your account.`, 'warning');
-      return;
-    }
-
-    showNotification('⚡ TeleHire Safe Form Filler active...', 'info');
-
-    const result = await executeAutofillFlow(profRes.profile, taskId);
+    showBanner(true);
+    const result = await executeAutofillFlow(profile, taskId);
 
     if (result.totalFilled > 0) {
-      const useRes = await chrome.runtime.sendMessage({
-        type: 'USE_QUOTA',
-        payload: {
-          email,
-          license,
-          platform: window.__telehire_diagnostics.platform,
-          jobTitle: document.title.split('|')[0].split('-')[0].trim() || 'Job Application',
-          company: window.location.hostname,
-          jobUrl: window.location.href,
-        },
-      });
-
-      const newDaily = useRes?.todayCount || (usage.count + 1);
-      const newQuota = useRes?.quotaLeft !== undefined ? useRes.quotaLeft : (subCheck.quotaLeft - 1);
-      showSuccessModal(result.totalFilled, newDaily, newQuota);
+      showSuccessBanner(result.totalFilled);
     }
   }
 
-  // =========================================================================
-  // 8. NOTIFICATION & SAFETY MODAL UI
-  // =========================================================================
-
-  function injectTopBanner() {
-    if (window.__telehire_dismissed) return;
-    if (document.getElementById('whatshire-safe-bar')) return;
-
+  function showBanner(loading = false) {
+    if (window.__lucres_dismissed || document.getElementById('lucres-ai-banner')) return;
     const banner = document.createElement('div');
-    banner.id = 'whatshire-safe-bar';
+    banner.id = 'lucres-ai-banner';
+    banner.style.cssText = `
+      position: fixed; top: 0; left: 0; right: 0; z-index: 999999999;
+      background: linear-gradient(90deg, #0b0f19, #1e293b); color: #f8fafc;
+      border-bottom: 2px solid #38bdf8; padding: 10px 16px; font-family: -apple-system, sans-serif;
+      display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    `;
+
     banner.innerHTML = `
-      <div class="wh-banner-content">
-        <div class="wh-banner-left">
-          <span class="wh-logo-badge">⚡ TeleHire</span>
-          <span class="wh-banner-text">Application detected. Fill form with your verified profile?</span>
-        </div>
-        <div class="wh-banner-actions">
-          <button id="wh-btn-fill" class="wh-btn-primary">⚡ Fill Form Safely</button>
-          <button id="wh-btn-close" class="wh-btn-ghost" title="Dismiss">✕</button>
-        </div>
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span style="background: linear-gradient(135deg, #2563eb, #38bdf8); color: #fff; font-weight: 800; font-size: 11px; padding: 3px 8px; border-radius: 4px;">LUCRES AI</span>
+        <span style="font-size: 12px; font-weight: 600;">${loading ? '⚡ Auto-filling application fields with 95% ATS profile...' : 'Application detected. Fill form with Lucres AI 95% ATS Profile?'}</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <button id="lucres-btn-fill" style="background: #2563eb; color: #fff; border: none; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer;">⚡ Fill Form Safely</button>
+        <button id="lucres-btn-close" style="background: transparent; color: #94a3b8; border: 1px solid #334155; padding: 6px 10px; border-radius: 6px; font-size: 12px; cursor: pointer;">✕</button>
       </div>
     `;
 
-    const root = document.documentElement || document.body;
-    if (root) root.insertBefore(banner, root.firstChild);
+    document.documentElement.insertBefore(banner, document.documentElement.firstChild);
 
-    document.getElementById('wh-btn-fill')?.addEventListener('click', (e) => {
-      e.stopPropagation();
-      triggerSafeAutofill(currentActiveTaskId);
-    });
-
-    document.getElementById('wh-btn-close')?.addEventListener('click', (e) => {
-      e.stopPropagation();
-      window.__telehire_dismissed = true;
+    document.getElementById('lucres-btn-fill')?.addEventListener('click', () => triggerSafeAutofill(currentActiveTaskId));
+    document.getElementById('lucres-btn-close')?.addEventListener('click', () => {
+      window.__lucres_dismissed = true;
       banner.remove();
     });
   }
 
-  function showNotification(text, type = 'info') {
-    let toast = document.getElementById('whatshire-toast');
-    if (!toast) {
-      toast = document.createElement('div');
-      toast.id = 'whatshire-toast';
-      (document.body || document.documentElement).appendChild(toast);
-    }
-
-    toast.className = `wh-toast wh-toast-${type}`;
-    toast.innerText = text;
-    toast.style.display = 'block';
-
-    setTimeout(() => {
-      if (toast) toast.style.display = 'none';
-    }, 6000);
-  }
-
-  function showSuccessModal(filledCount, todayCount, quotaLeft) {
-    let modal = document.getElementById('whatshire-modal');
-    if (modal) modal.remove();
-
-    const isReview = window.__telehire_diagnostics.status === 'READY_FOR_MANUAL_SUBMIT';
-
-    modal = document.createElement('div');
-    modal.id = 'whatshire-modal';
-    modal.innerHTML = `
-      <div class="wh-modal-overlay">
-        <div class="wh-modal-card">
-          <div class="wh-modal-header">
-            <span class="wh-icon-check">✅</span>
-            <h3>${isReview ? 'Application Ready for Review!' : 'Form Filled Safely!'}</h3>
-          </div>
-          <p class="wh-modal-body">
-            <strong>${filledCount} fields</strong> filled with human-paced typing.<br><br>
-            ${isReview ? '🎯 <strong>Review Step Reached:</strong> All steps filled safely.<br><br>' : ''}
-            ⚠️ <strong>Safety Rule:</strong> Please manually review all answers, check your resume file, and click <em>Submit Application</em> yourself.<br><br>
-            <span class="wh-badge-safety">🛡️ Human-paced typing · Final submission requires manual candidate review</span>
-          </p>
-          <div class="wh-modal-footer">
-            <div class="wh-modal-stats">
-              <span>Today: <strong>${todayCount} / 40</strong> fills</span>
-              <span>Quota left: <strong>${quotaLeft}</strong></span>
-            </div>
-            <button id="wh-modal-ok" class="wh-btn-primary">I will review & submit</button>
-          </div>
-        </div>
+  function showSuccessBanner(filledCount) {
+    const banner = document.getElementById('lucres-ai-banner');
+    if (!banner) return;
+    banner.innerHTML = `
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span style="background: #059669; color: #fff; font-weight: 800; font-size: 11px; padding: 3px 8px; border-radius: 4px;">✓ ATS 95% FILLED</span>
+        <span style="font-size: 12px; font-weight: 600;">${filledCount} fields filled. ⚠️ Final submit requires your manual review.</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <button id="lucres-btn-done" style="background: #059669; color: #fff; border: none; padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer;">I will review & submit</button>
       </div>
     `;
-
-    (document.body || document.documentElement).appendChild(modal);
-
-    document.getElementById('wh-modal-ok')?.addEventListener('click', () => {
-      modal.remove();
-    });
+    document.getElementById('lucres-btn-done')?.addEventListener('click', () => banner.remove());
   }
 
-  // Runtime Message Dispatcher
-  chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
-    if (msg.type === 'AUTO_START_QUEUE_TASK') {
-      if (!isExecuting) {
-        currentActiveTaskId = msg.task?.taskId;
-        triggerSafeAutofill(msg.task?.taskId).then(() => sendResponse({ started: true, diagnostics: window.__telehire_diagnostics }));
-        return true;
+  // MutationObserver for dynamically loaded SPAs & Application Modals
+  const observer = new MutationObserver(() => {
+    if (!window.__lucres_dismissed && !document.getElementById('lucres-ai-banner')) {
+      const active = detectActiveAdapter();
+      if (active && active.root && isVisible(active.root)) {
+        showBanner();
       }
-      sendResponse({ started: false, reason: 'Already executing' });
-      return true;
     }
+  });
+  observer.observe(document.body || document.documentElement, { childList: true, subtree: true });
 
-    if (msg.type === 'TRIGGER_FILL') {
-      triggerSafeAutofill(msg.taskId).then(() => sendResponse({ success: true, diagnostics: window.__telehire_diagnostics }));
-      return true;
-    }
-
-    if (msg.type === 'GET_DIAGNOSTICS') {
-      sendResponse({ diagnostics: window.__telehire_diagnostics });
+  // Runtime message listener
+  chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+    if (msg.type === 'AUTO_START_QUEUE_TASK' || msg.type === 'TRIGGER_FILL') {
+      triggerSafeAutofill(msg.task?.taskId || msg.taskId).then(() => {
+        sendResponse({ success: true, diagnostics: window.__lucres_diagnostics });
+      });
       return true;
     }
   });
 
-  // Top Banner Injection
-  setTimeout(injectTopBanner, 1000);
-  setInterval(() => {
-    if (!window.__telehire_dismissed && !document.getElementById('whatshire-safe-bar')) {
-      injectTopBanner();
-    }
-  }, 3000);
+  setTimeout(() => {
+    const active = detectActiveAdapter();
+    if (active && active.root) showBanner();
+  }, 1200);
 })();

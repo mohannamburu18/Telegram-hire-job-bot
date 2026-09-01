@@ -18,6 +18,7 @@ function copyFolderSync(from, to) {
 function buildExtensionZip() {
   try {
     const extDir = path.join(__dirname, '..', 'extension');
+    const chromeExtDir = path.join(__dirname, '..', 'chrome-extension');
     const publicDir = path.join(__dirname, '..', 'public');
     const publicExtDir = path.join(publicDir, 'extension');
     const rootZipPath = path.join(__dirname, '..', 'whatshire-extension.zip');
@@ -29,8 +30,9 @@ function buildExtensionZip() {
     }
 
     if (fs.existsSync(extDir)) {
-      // Sync into public/extension for static serving
+      // Sync into public/extension and chrome-extension
       copyFolderSync(extDir, publicExtDir);
+      copyFolderSync(extDir, chromeExtDir);
 
       const zip = new AdmZip();
       zip.addLocalFolder(extDir);
@@ -39,7 +41,7 @@ function buildExtensionZip() {
       zip.writeZip(publicZipPath);
       zip.writeZip(publicShortZipPath);
 
-      console.log('✅ Generated whatshire-extension.zip in public/ and root directory.');
+      console.log('✅ Generated whatshire-extension.zip and synced chrome-extension/ directory.');
     } else {
       console.warn('[ZIP BUILDER] extension directory not found.');
     }
